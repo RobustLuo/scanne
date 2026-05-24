@@ -1,0 +1,36 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build EXE
+        run: |
+          pyinstaller --onefile `
+            --name "超级骆狗工具箱" `
+            --version-file version_info.py `
+            --manifest app.manifest `
+            --uac-admin `
+            --clean `
+            scanner.py
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: 超级骆狗工具箱
+          path: dist/超级骆狗工具箱.exe
