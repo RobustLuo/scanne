@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 构建产物
+build/
+dist/
+*.spec
+
+# 运行时生成
+perf_backup.json
+scan_report_*.txt
+battery-report.html
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
