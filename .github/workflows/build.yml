@@ -3,7 +3,11 @@ name: Build Windows EXE
 on:
   push:
     branches: [main]
+    tags: ['v*']
   workflow_dispatch:
+
+permissions:
+  contents: write   # 发 Release 需要写权限
 
 jobs:
   build:
@@ -29,8 +33,33 @@ jobs:
             --clean `
             scanner.py
 
-      - name: Upload EXE
+      - name: Upload Artifact (90天有效)
         uses: actions/upload-artifact@v4
         with:
           name: 超级骆狗工具箱
           path: dist/超级骆狗工具箱.exe
+
+      - name: Publish Release (仅 tag 触发)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/超级骆狗工具箱.exe
+          generate_release_notes: true
+          body: |
+            ## 下载
+
+            点击下方 **超级骆狗工具箱.exe** 直接下载。
+
+            ## ⚠️ 首次运行提示
+
+            Windows 会弹出 SmartScreen 警告（蓝底"已保护你的电脑"）——
+            这是因为 exe 没有花钱买代码签名证书，**不是病毒**。
+
+            **绕过方法**：点击窗口里"更多信息" → "仍要运行"。
+
+            ## 运行要求
+
+            - Windows 7 / 10 / 11
+            - 首次启动会自动请求管理员权限（UAC 弹窗，选"是"）
+
+            完整功能介绍见 [README](https://github.com/RobustLuo/scanne#readme)
