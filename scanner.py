@@ -199,13 +199,103 @@ SCHEDULED_TASK_KEYWORDS = [
 
 
 class Colors:
-    """Windows控制台颜色"""
+    """Windows控制台颜色 (ANSI)"""
+    # 基础前景色
     RED = "\033[91m"
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    MAGENTA = "\033[95m"
     CYAN = "\033[96m"
+    WHITE = "\033[97m"
+    GRAY = "\033[90m"
+    # 深色（不那么刺眼）
+    DARK_GREEN = "\033[32m"
+    DARK_CYAN = "\033[36m"
+    DARK_YELLOW = "\033[33m"
+    # 背景色
+    BG_BLUE = "\033[44m"
+    BG_CYAN = "\033[46m"
+    # 样式
     BOLD = "\033[1m"
+    DIM = "\033[2m"
+    UNDERLINE = "\033[4m"
     RESET = "\033[0m"
+
+
+# ============================================================
+# UI 工具：处理中文/emoji 宽度对齐
+# ============================================================
+import re as _re
+_ANSI_RE = _re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _visual_len(s):
+    """计算字符串可视宽度（中文/emoji 算 2，ANSI 不算）"""
+    s = _ANSI_RE.sub("", s)
+    w = 0
+    for ch in s:
+        cp = ord(ch)
+        # CJK 基本块 + 中日韩标点 + 全角 + emoji
+        if (0x1100 <= cp <= 0x115F or 0x2E80 <= cp <= 0x303E or
+            0x3041 <= cp <= 0x33FF or 0x3400 <= cp <= 0x4DBF or
+            0x4E00 <= cp <= 0x9FFF or 0xA000 <= cp <= 0xA4CF or
+            0xAC00 <= cp <= 0xD7A3 or 0xF900 <= cp <= 0xFAFF or
+            0xFE30 <= cp <= 0xFE4F or 0xFF00 <= cp <= 0xFF60 or
+            0xFFE0 <= cp <= 0xFFE6 or 0x1F300 <= cp <= 0x1FAFF or
+            0x2600 <= cp <= 0x27BF):
+            w += 2
+        else:
+            w += 1
+    return w
+
+
+def _pad_to(s, width, fill=" "):
+    """把字符串按可视宽度右侧填充到 width"""
+    cur = _visual_len(s)
+    if cur >= width:
+        return s
+    return s + fill * (width - cur)
+
+
+def draw_box(title, lines, width=58, color=None):
+    """绘制对齐的 Unicode 方框
+    lines: 每行可以是 str 或 ('label', 'desc') 元组
+    """
+    color = color or Colors.CYAN
+    bold = Colors.BOLD
+    reset = Colors.RESET
+    inner = width - 2
+    top = f"{color}{bold}┌{'─' * inner}┐{reset}"
+    sep = f"{color}{bold}├{'─' * inner}┤{reset}"
+    bot = f"{color}{bold}└{'─' * inner}┘{reset}"
+    print(top)
+    # 标题居中
+    pad = (inner - _visual_len(title)) // 2
+    title_line = " " * pad + title
+    title_line = _pad_to(title_line, inner)
+    print(f"{color}{bold}│{reset}{Colors.WHITE}{Colors.BOLD}{title_line}{reset}{color}{bold}│{reset}")
+    print(sep)
+    for line in lines:
+        if line is None:
+            print(sep)
+            continue
+        if isinstance(line, tuple) and len(line) == 2:
+            text = f" {line[0]} {line[1]}"
+        else:
+            text = f" {line}"
+        padded = _pad_to(text, inner)
+        print(f"{color}{bold}│{reset}{padded}{color}{bold}│{reset}")
+    print(bot)
+
+
+def section(title, color=None, char="═"):
+    """打印一个二级标题分割线"""
+    color = color or Colors.CYAN
+    bar = char * 58
+    print(f"\n{color}{Colors.BOLD}{bar}{Colors.RESET}")
+    print(f"{color}{Colors.BOLD}  ▎ {title}{Colors.RESET}")
+    print(f"{color}{Colors.BOLD}{bar}{Colors.RESET}\n")
 
 
 def enable_virtual_terminal():
@@ -457,20 +547,31 @@ def format_size(size_bytes):
 
 def print_header():
     """打印标题"""
+    C = Colors
     print(f"""
-{Colors.CYAN}{Colors.BOLD}
-╔══════════════════════════════════════════════════════╗
-║                                                      ║
-║        欢迎进入超级骆狗的工具箱                       ║
-║                                                      ║
-╠══════════════════════════════════════════════════════╣
-║          流氓软件扫描器 v2.0                         ║
-║  360/2345/百度/金山/猎豹/驱动精灵/搜狗/暴风...       ║
-║  全面扫描隐藏的国产流氓捆绑软件残留                  ║
-╠══════════════════════════════════════════════════════╣
-║  作者: RobustLuo                                     ║
-╚══════════════════════════════════════════════════════╝
-{Colors.RESET}""")
+{C.BOLD}{C.CYAN}
+    ╔═══════════════════════════════════════════════════╗
+    ║                                                   ║
+    ║   {C.WHITE}███████╗██╗   ██╗██████╗ ███████╗██████╗{C.CYAN}     ║
+    ║   {C.WHITE}██╔════╝██║   ██║██╔══██╗██╔════╝██╔══██╗{C.CYAN}    ║
+    ║   {C.WHITE}███████╗██║   ██║██████╔╝█████╗  ██████╔╝{C.CYAN}    ║
+    ║   {C.WHITE}╚════██║██║   ██║██╔═══╝ ██╔══╝  ██╔══██╗{C.CYAN}    ║
+    ║   {C.WHITE}███████║╚██████╔╝██║     ███████╗██║  ██║{C.CYAN}    ║
+    ║   {C.WHITE}╚══════╝ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝{C.CYAN}   ║
+    ║                                                   ║
+    ╠═══════════════════════════════════════════════════╣
+    ║                                                   ║
+    ║   {C.GREEN}超级骆狗工具箱 v3.0{C.CYAN}                          ║
+    ║   {C.GRAY}Windows 一站式维护 · 9大模块{C.CYAN}                  ║
+    ║                                                   ║
+    ║   {C.DIM}反流氓 · 反劫持 · 空间清理 · 安全审计{C.CYAN}        ║
+    ║   {C.DIM}网络工具 · 装机助手 · 性能优化{C.CYAN}                ║
+    ║                                                   ║
+    ╠═══════════════════════════════════════════════════╣
+    ║   {C.GRAY}Author: RobustLuo{C.CYAN}                             ║
+    ║   {C.GRAY}GitHub: github.com/RobustLuo/scanne{C.CYAN}           ║
+    ╚═══════════════════════════════════════════════════╝
+{C.RESET}""")
 
 
 def print_section(title, items, show_size=False):
@@ -2046,17 +2147,18 @@ def show_install_tutorial():
 
 def run_install_helper():
     """装机助手主入口"""
+    C = Colors
     while True:
-        print(f"\n{Colors.BOLD}{Colors.CYAN}┌────────────────────────────────────────────┐")
-        print(f"│         装机助手（小白模式）               │")
-        print(f"├────────────────────────────────────────────┤")
-        print(f"│  {Colors.GREEN}[1]{Colors.CYAN} 重置此电脑 ⭐ 最推荐              │")
-        print(f"│  {Colors.GREEN}[2]{Colors.CYAN} 制作系统U盘指南                    │")
-        print(f"│  {Colors.GREEN}[3]{Colors.CYAN} 进入高级启动（PE/安全模式入口）    │")
-        print(f"│  {Colors.GREEN}[4]{Colors.CYAN} 装机小白速查（图文教程）           │")
-        print(f"│  {Colors.GREEN}[0]{Colors.CYAN} 返回上级                           │")
-        print(f"└────────────────────────────────────────────┘{Colors.RESET}")
-        ch = input(f"\n  {Colors.YELLOW}请选择: {Colors.RESET}").strip()
+        print()
+        draw_box("装机助手 · 小白模式", [
+            f"  {C.GREEN}[1]{C.RESET} {C.WHITE}重置此电脑{C.RESET} {C.YELLOW}推荐{C.RESET}       {C.GRAY}(保留文件/恢复出厂){C.RESET}",
+            f"  {C.GREEN}[2]{C.RESET} {C.WHITE}制作系统U盘指南{C.RESET}       {C.GRAY}(三种方案可选){C.RESET}",
+            f"  {C.GREEN}[3]{C.RESET} {C.WHITE}进入高级启动{C.RESET}           {C.GRAY}(PE/安全模式入口){C.RESET}",
+            f"  {C.GREEN}[4]{C.RESET} {C.WHITE}装机小白速查{C.RESET}           {C.GRAY}(图文教程){C.RESET}",
+            None,
+            f"  {C.RED}[0]{C.RESET} {C.DIM}返回{C.RESET}",
+        ], width=58, color=Colors.MAGENTA)
+        ch = input(f"\n  {C.CYAN}{C.BOLD}>{C.RESET} {C.WHITE}请选择: {C.RESET}").strip()
 
         if ch == "1":
             reset_this_pc()
@@ -2567,20 +2669,21 @@ def manage_power_plans():
 
 def run_performance_boost():
     """性能优化主入口"""
+    C = Colors
     while True:
-        print(f"\n{Colors.BOLD}{Colors.CYAN}┌────────────────────────────────────────────┐")
-        print(f"│       电脑性能优化（智能识别设备）         │")
-        print(f"├────────────────────────────────────────────┤")
-        print(f"│  {Colors.GREEN}[1]{Colors.CYAN} 检测设备类型 & 当前性能状态        │")
-        print(f"│  {Colors.GREEN}[2]{Colors.CYAN} 一键性能优化 ⭐                    │")
-        print(f"│  {Colors.GREEN}[3]{Colors.CYAN} 电源计划管理                       │")
-        print(f"│  {Colors.GREEN}[4]{Colors.CYAN} 关闭透明/阴影 (保留窗口动画)       │")
-        print(f"│  {Colors.GREEN}[5]{Colors.CYAN} 关闭遥测 / 广告 / 推送             │")
-        print(f"│  {Colors.GREEN}[6]{Colors.CYAN} 电池健康报告 (仅笔记本)            │")
-        print(f"│  {Colors.GREEN}[7]{Colors.CYAN} 还原所有优化                       │")
-        print(f"│  {Colors.GREEN}[0]{Colors.CYAN} 返回上级                           │")
-        print(f"└────────────────────────────────────────────┘{Colors.RESET}")
-        ch = input(f"\n  {Colors.YELLOW}请选择: {Colors.RESET}").strip()
+        print()
+        draw_box("性能优化 · 智能识别设备", [
+            f"  {C.GREEN}[1]{C.RESET} {C.WHITE}检测设备类型{C.RESET}           {C.GRAY}(笔记本/台式/SSD/HDD){C.RESET}",
+            f"  {C.GREEN}[2]{C.RESET} {C.WHITE}一键性能优化{C.RESET} {C.YELLOW}推荐{C.RESET}    {C.GRAY}(差异化策略){C.RESET}",
+            f"  {C.GREEN}[3]{C.RESET} {C.WHITE}电源计划管理{C.RESET}           {C.GRAY}(高性能/平衡/节能){C.RESET}",
+            f"  {C.GREEN}[4]{C.RESET} {C.WHITE}关闭透明/阴影{C.RESET}          {C.GRAY}(保留窗口动画){C.RESET}",
+            f"  {C.GREEN}[5]{C.RESET} {C.WHITE}关闭遥测/广告/推送{C.RESET}     {C.GRAY}(DiagTrack/广告ID){C.RESET}",
+            f"  {C.GREEN}[6]{C.RESET} {C.WHITE}电池健康报告{C.RESET}           {C.GRAY}(仅笔记本){C.RESET}",
+            f"  {C.YELLOW}[7]{C.RESET} {C.WHITE}还原所有优化{C.RESET}           {C.GRAY}(一键回滚){C.RESET}",
+            None,
+            f"  {C.RED}[0]{C.RESET} {C.DIM}返回{C.RESET}",
+        ], width=58, color=Colors.BLUE)
+        ch = input(f"\n  {C.CYAN}{C.BOLD}>{C.RESET} {C.WHITE}请选择: {C.RESET}").strip()
 
         if ch == "1":
             show_perf_status()
@@ -2625,20 +2728,26 @@ def run_performance_boost():
 
 def print_menu():
     """打印主菜单"""
-    print(f"\n{Colors.BOLD}{Colors.CYAN}┌────────────────────────────────────────────┐")
-    print(f"│              功能菜单                      │")
-    print(f"├────────────────────────────────────────────┤")
-    print(f"│  {Colors.GREEN}[1]{Colors.CYAN} 流氓软件扫描与清理                  │")
-    print(f"│  {Colors.GREEN}[2]{Colors.CYAN} 系统缓存清理                        │")
-    print(f"│  {Colors.GREEN}[3]{Colors.CYAN} 反劫持检测（hosts/浏览器/右键/启动）│")
-    print(f"│  {Colors.GREEN}[4]{Colors.CYAN} 空间清理增强（大文件/重复文件）     │")
-    print(f"│  {Colors.GREEN}[5]{Colors.CYAN} 安全审计（进程/Defender/驱动签名）  │")
-    print(f"│  {Colors.GREEN}[6]{Colors.CYAN} 网络工具（DNS/端口/诊断）           │")
-    print(f"│  {Colors.GREEN}[7]{Colors.CYAN} 查看系统信息                        │")
-    print(f"│  {Colors.GREEN}[8]{Colors.CYAN} 装机助手（小白模式）                │")
-    print(f"│  {Colors.GREEN}[9]{Colors.CYAN} 性能优化（智能识别设备）⭐          │")
-    print(f"│  {Colors.GREEN}[0]{Colors.CYAN} 退出                                │")
-    print(f"└────────────────────────────────────────────┘{Colors.RESET}")
+    C = Colors
+    print()
+    draw_box("功能菜单", [
+        f"{C.GRAY}── 清理 ──────────────────────────────────────{C.RESET}",
+        f"  {C.GREEN}[1]{C.RESET} {C.WHITE}流氓软件扫描与清理{C.RESET}      {C.GRAY}(强力四级删除){C.RESET}",
+        f"  {C.GREEN}[2]{C.RESET} {C.WHITE}系统缓存清理{C.RESET}            {C.GRAY}(Temp/浏览器/更新){C.RESET}",
+        f"  {C.GREEN}[3]{C.RESET} {C.WHITE}反劫持检测{C.RESET}              {C.GRAY}(hosts/快捷方式/右键/启动){C.RESET}",
+        f"  {C.GREEN}[4]{C.RESET} {C.WHITE}空间清理增强{C.RESET}            {C.GRAY}(大文件/重复文件){C.RESET}",
+        None,
+        f"{C.GRAY}── 检测 ──────────────────────────────────────{C.RESET}",
+        f"  {C.GREEN}[5]{C.RESET} {C.WHITE}安全审计{C.RESET}                {C.GRAY}(进程/Defender/驱动签名){C.RESET}",
+        f"  {C.GREEN}[6]{C.RESET} {C.WHITE}网络工具{C.RESET}                {C.GRAY}(DNS/端口/诊断){C.RESET}",
+        f"  {C.GREEN}[7]{C.RESET} {C.WHITE}系统信息{C.RESET}                {C.GRAY}(CPU/内存/磁盘){C.RESET}",
+        None,
+        f"{C.GRAY}── 工具 ──────────────────────────────────────{C.RESET}",
+        f"  {C.GREEN}[8]{C.RESET} {C.WHITE}装机助手{C.RESET}                {C.GRAY}(重装/U盘/教程){C.RESET}",
+        f"  {C.GREEN}[9]{C.RESET} {C.WHITE}性能优化{C.RESET} {C.YELLOW}NEW{C.RESET}            {C.GRAY}(电源/遥测/自动识别设备){C.RESET}",
+        None,
+        f"  {C.RED}[0]{C.RESET} {C.DIM}退出{C.RESET}",
+    ], width=60)
 
 
 def is_admin():
@@ -2675,7 +2784,7 @@ def main():
 
     while True:
         print_menu()
-        choice = input(f"\n  {Colors.YELLOW}请输入选项编号: {Colors.RESET}").strip()
+        choice = input(f"\n  {Colors.CYAN}{Colors.BOLD}>{Colors.RESET} {Colors.WHITE}请选择: {Colors.RESET}").strip()
 
         if choice == "1":
             run_scan()
@@ -2700,12 +2809,14 @@ def main():
         elif choice == "9":
             run_performance_boost()
         elif choice == "0":
-            print(f"\n  {Colors.CYAN}感谢使用超级骆狗的工具箱，再见！{Colors.RESET}\n")
+            print(f"\n  {Colors.DIM}────────────────────────────────{Colors.RESET}")
+            print(f"  {Colors.CYAN}感谢使用，再见！{Colors.RESET}")
+            print(f"  {Colors.GRAY}GitHub: github.com/RobustLuo/scanne{Colors.RESET}\n")
             break
         else:
-            print(f"\n  {Colors.RED}无效选项，请重新输入{Colors.RESET}")
+            print(f"\n  {Colors.RED}✗ 无效选项{Colors.RESET}")
 
-        input(f"\n  {Colors.CYAN}按回车键返回菜单...{Colors.RESET}")
+        input(f"\n  {Colors.DIM}按回车键返回菜单...{Colors.RESET}")
 
 
 if __name__ == "__main__":
