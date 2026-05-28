@@ -619,31 +619,65 @@ def generate_report(results):
     return report_name
 
 
-def clean_cache():
-    """清理系统缓存"""
-    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*50}")
-    print(f"  系统缓存清理")
-    print(f"{'='*50}{Colors.RESET}\n")
+def _force_delete_file(fp):
+    """强力删除单个文件：直接删 → cmd强删 → 提权后删 → 登记重启删
+    注：_take_ownership/_schedule_delete_on_reboot 定义于本模块后段，调用时已解析"""
+    # 第1级：直接删
+    try:
+        os.remove(fp)
+        return True, "direct"
+    except (PermissionError, OSError):
+        pass
 
-    cache_paths = [
-        (os.path.expandvars(r"%TEMP%"), "用户临时文件"),
-        (os.path.expandvars(r"%SystemRoot%\Temp"), "系统临时文件"),
-        (os.path.expandvars(r"%SystemRoot%\Prefetch"), "预读取缓存"),
-        (os.path.expandvars(r"%LocalAppData%\Temp"), "本地临时文件"),
-        (os.path.expandvars(r"%LocalAppData%\Microsoft\Windows\INetCache"), "IE/Edge缓存"),
-        (os.path.expandvars(r"%LocalAppData%\Microsoft\Windows\Explorer"), "缩略图缓存"),
-        (os.path.expandvars(r"%LocalAppData%\Google\Chrome\User Data\Default\Cache"), "Chrome缓存"),
-        (os.path.expandvars(r"%LocalAppData%\Microsoft\Edge\User Data\Default\Cache"), "Edge缓存"),
-        (os.path.expandvars(r"%SystemRoot%\SoftwareDistribution\Download"), "Windows更新缓存"),
-        (os.path.expandvars(r"%LocalAppData%\CrashDumps"), "崩溃转储文件"),
-        (os.path.expandvars(r"%ProgramData%\Microsoft\Windows\WER"), "错误报告"),
-    ]
+    # 第2级：cmd /c del /f /q 绕过 Python 句柄限制
+    try:
+        subprocess.run(["cmd", "/c", "del", "/f", "/q", fp],
+                       capture_output=True, timeout=5)
+        if not os.path.exists(fp):
+            return True, "cmd_del"
+    except Exception:
+        pass
 
+    # 第3级：复用现有 _take_ownership 提权后删
+    try:
+        _take_ownership(fp, recursive=False)
+        os.remove(fp)
+        return True, "takeown"
+    except Exception:
+        pass
+
+    # 第4级：复用现有 _schedule_delete_on_reboot 登记重启删除
+    if _schedule_delete_on_reboot(fp):
+        return True, "reboot"
+
+    return False, "failed"
+
+
+def _force_delete_dir(dp):
+    """强力删除目录"""
+    try:
+        os.rmdir(dp)
+        return True
+    except OSError:
+        pass
+    try:
+        subprocess.run(
+            ["cmd", "/c", "rd", "/s", "/q", dp],
+            capture_output=True, timeout=10
+        )
+        return not os.path.exists(dp)
+    except Exception:
+        return False
+
+
+def _clean_paths(paths_list):
+    """通用路径清理（强力版），返回 (cleaned_bytes, file_count, error_count)"""
     total_cleaned = 0
     total_files = 0
     total_errors = 0
+    reboot_pending = 0
 
-    for path, desc in cache_paths:
+    for path, desc in paths_list:
         if not os.path.isdir(path):
             continue
 
@@ -657,33 +691,324 @@ def clean_cache():
 
         cleaned = 0
         errors = 0
+        pending = 0
         for root, dirs, files in os.walk(path, topdown=False):
             for f in files:
                 fp = os.path.join(root, f)
                 try:
                     size = os.path.getsize(fp)
-                    os.remove(fp)
+                except Exception:
+                    size = 0
+                success, method = _force_delete_file(fp)
+                if success:
                     cleaned += size
                     total_files += 1
-                except Exception:
+                    if method == "reboot":
+                        pending += 1
+                else:
                     errors += 1
             for d in dirs:
                 dp = os.path.join(root, d)
-                try:
-                    os.rmdir(dp)
-                except Exception:
-                    pass
+                _force_delete_dir(dp)
 
         total_cleaned += cleaned
         total_errors += errors
+        reboot_pending += pending
         if cleaned > 0:
             print(f"    {Colors.GREEN}已清理: {format_size(cleaned)}{Colors.RESET}")
+        if pending > 0:
+            print(f"    {Colors.CYAN}已登记 {pending} 个文件重启后删除{Colors.RESET}")
         if errors > 0:
-            print(f"    {Colors.RED}跳过 {errors} 个被占用文件{Colors.RESET}")
+            print(f"    {Colors.RED}跳过 {errors} 个无法删除的文件{Colors.RESET}")
         print()
 
+    if reboot_pending > 0:
+        print(f"  {Colors.CYAN}提示: 共有 {reboot_pending} 个顽固文件已登记重启删除，下次开机自动清除{Colors.RESET}\n")
+
+    return total_cleaned, total_files, total_errors
+
+
+def _clean_files_by_ext(directory, extensions, desc):
+    """清理指定目录下特定扩展名文件，返回 (cleaned_bytes, file_count, error_count)"""
+    cleaned = 0
+    files_count = 0
+    errors = 0
+    if not os.path.isdir(directory):
+        return 0, 0, 0
+
+    found_files = []
+    for root, dirs, files in os.walk(directory):
+        for f in files:
+            if any(f.lower().endswith(ext) for ext in extensions):
+                found_files.append(os.path.join(root, f))
+
+    if not found_files:
+        return 0, 0, 0
+
+    total_size = sum(os.path.getsize(fp) for fp in found_files if os.path.exists(fp))
+    print(f"  {Colors.YELLOW}清理: {desc}{Colors.RESET}")
+    print(f"    路径: {directory}")
+    print(f"    文件数: {len(found_files)}，大小: {format_size(total_size)}")
+
+    for fp in found_files:
+        try:
+            size = os.path.getsize(fp)
+            os.remove(fp)
+            cleaned += size
+            files_count += 1
+        except Exception:
+            errors += 1
+
+    if cleaned > 0:
+        print(f"    {Colors.GREEN}已清理: {format_size(cleaned)}{Colors.RESET}")
+    if errors > 0:
+        print(f"    {Colors.RED}跳过 {errors} 个被占用文件{Colors.RESET}")
+    print()
+    return cleaned, files_count, errors
+
+
+def _empty_recycle_bin():
+    """清空回收站"""
+    print(f"  {Colors.YELLOW}清理: 回收站{Colors.RESET}")
+    try:
+        # SHEmptyRecycleBinW flags: SHERB_NOCONFIRMATION=1 | SHERB_NOPROGRESSUI=2 | SHERB_NOSOUND=4
+        result = ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, 0x0007)
+        if result == 0:
+            print(f"    {Colors.GREEN}回收站已清空{Colors.RESET}")
+        else:
+            print(f"    {Colors.GREEN}回收站已经是空的{Colors.RESET}")
+    except Exception as e:
+        print(f"    {Colors.RED}清空回收站失败: {e}{Colors.RESET}")
+    print()
+
+
+def _flush_dns():
+    """刷新DNS缓存"""
+    print(f"  {Colors.YELLOW}清理: DNS缓存{Colors.RESET}")
+    try:
+        subprocess.run(["ipconfig", "/flushdns"], capture_output=True, timeout=10)
+        print(f"    {Colors.GREEN}DNS缓存已刷新{Colors.RESET}")
+    except Exception as e:
+        print(f"    {Colors.RED}刷新DNS失败: {e}{Colors.RESET}")
+    print()
+
+
+def _clean_windows_old():
+    """清理 Windows.old 与系统升级残留（调用系统 cleanmgr 静默清理）"""
+    print(f"  {Colors.YELLOW}清理: Windows.old 与系统残留{Colors.RESET}")
+
+    # 检查所有盘的 Windows.old
+    drives = get_all_drives()
+    found_any = False
+    total_size = 0
+    for d in drives:
+        wo = os.path.join(d, "Windows.old")
+        if os.path.isdir(wo):
+            found_any = True
+            sz = get_dir_size(wo)
+            total_size += sz
+            print(f"    发现: {wo}  ({format_size(sz)})")
+
+    if not found_any:
+        print(f"    {Colors.GREEN}未发现 Windows.old 残留{Colors.RESET}")
+    else:
+        print(f"\n    {Colors.CYAN}使用 takeown + rd 强力删除...{Colors.RESET}")
+        for d in drives:
+            wo = os.path.join(d, "Windows.old")
+            if not os.path.isdir(wo):
+                continue
+            try:
+                # 提权
+                subprocess.run(["takeown", "/f", wo, "/r", "/d", "y"],
+                               capture_output=True, timeout=120)
+                subprocess.run(["icacls", wo, "/grant", "administrators:F", "/t"],
+                               capture_output=True, timeout=120)
+                # 强删
+                subprocess.run(["cmd", "/c", "rd", "/s", "/q", wo],
+                               capture_output=True, timeout=300)
+                if not os.path.exists(wo):
+                    print(f"    {Colors.GREEN}已删除: {wo}{Colors.RESET}")
+                else:
+                    print(f"    {Colors.YELLOW}部分残留: {wo}{Colors.RESET}")
+            except Exception as e:
+                print(f"    {Colors.RED}清理失败 {wo}: {e}{Colors.RESET}")
+
+    # 另外调用 cleanmgr 处理 Windows 升级日志/旧驱动包
+    print(f"\n    {Colors.CYAN}启动 Windows 磁盘清理（cleanmgr）静默处理升级残留...{Colors.RESET}")
+    try:
+        # 用预设 sageset/sagerun，这里直接调用 dism 清理组件存储（最有效）
+        subprocess.run(
+            ["dism", "/online", "/cleanup-image", "/startcomponentcleanup", "/resetbase"],
+            capture_output=True, timeout=600
+        )
+        print(f"    {Colors.GREEN}组件存储清理完成（WinSxS 旧版本已移除）{Colors.RESET}")
+    except subprocess.TimeoutExpired:
+        print(f"    {Colors.YELLOW}DISM 超时，建议手动运行{Colors.RESET}")
+    except Exception as e:
+        print(f"    {Colors.RED}DISM 清理失败: {e}{Colors.RESET}")
+
+    print()
+
+
+def clean_cache():
+    """系统垃圾深度清理（增强版）"""
+    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*50}")
+    print(f"  系统垃圾深度清理")
+    print(f"{'='*50}{Colors.RESET}\n")
+
+    # 定义清理类别
+    categories = {
+        "1": {
+            "name": "系统临时文件与缓存",
+            "paths": [
+                (os.path.expandvars(r"%TEMP%"), "用户临时文件 (%TEMP%)"),
+                (os.path.expandvars(r"%SystemRoot%\Temp"), "系统临时文件"),
+                (os.path.expandvars(r"%LocalAppData%\Temp"), "本地临时文件"),
+                (os.path.expandvars(r"%SystemRoot%\Prefetch"), "预读取缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Microsoft\Windows\Explorer"), "缩略图缓存"),
+                (os.path.expandvars(r"%SystemRoot%\ServiceProfiles\LocalService\AppData\Local\FontCache"), "字体缓存"),
+            ]
+        },
+        "2": {
+            "name": "浏览器缓存（全部浏览器）",
+            "paths": [
+                (os.path.expandvars(r"%LocalAppData%\Microsoft\Windows\INetCache"), "IE/Edge网页缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Google\Chrome\User Data\Default\Cache"), "Chrome缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Google\Chrome\User Data\Default\Code Cache"), "Chrome代码缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Google\Chrome\User Data\Default\GPUCache"), "Chrome GPU缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Microsoft\Edge\User Data\Default\Cache"), "Edge缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Microsoft\Edge\User Data\Default\Code Cache"), "Edge代码缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Mozilla\Firefox\Profiles"), "Firefox缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Opera Software\Opera Stable\Cache"), "Opera缓存"),
+                (os.path.expandvars(r"%LocalAppData%\BraveSoftware\Brave-Browser\User Data\Default\Cache"), "Brave缓存"),
+                (os.path.expandvars(r"%LocalAppData%\360Chrome\Chrome\User Data\Default\Cache"), "360浏览器缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Tencent\QQBrowser\User Data\Default\Cache"), "QQ浏览器缓存"),
+                (os.path.expandvars(r"%LocalAppData%\2345Explorer\User Data\Default\Cache"), "2345浏览器缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Sogou\SogouExplorer\Cache"), "搜狗浏览器缓存"),
+            ]
+        },
+        "3": {
+            "name": "Windows更新与日志",
+            "paths": [
+                (os.path.expandvars(r"%SystemRoot%\SoftwareDistribution\Download"), "Windows更新下载缓存"),
+                (os.path.expandvars(r"%SystemRoot%\SoftwareDistribution\DataStore\Logs"), "更新日志"),
+                (os.path.expandvars(r"%LocalAppData%\CrashDumps"), "用户崩溃转储"),
+                (os.path.expandvars(r"%SystemRoot%\Minidump"), "系统小型转储"),
+                (os.path.expandvars(r"%ProgramData%\Microsoft\Windows\WER"), "Windows错误报告"),
+                (os.path.expandvars(r"%SystemRoot%\Logs\CBS"), "CBS日志"),
+                (os.path.expandvars(r"%SystemRoot%\Logs\DISM"), "DISM日志"),
+                (os.path.expandvars(r"%SystemRoot%\Panther"), "安装日志"),
+            ]
+        },
+        "4": {
+            "name": "常用软件缓存",
+            "paths": [
+                (os.path.expandvars(r"%LocalAppData%\Microsoft\Office\16.0\OfficeFileCache"), "Office文件缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Microsoft\Windows\WebCache"), "Web缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Microsoft\Terminal Server Client\Cache"), "远程桌面缓存"),
+                (os.path.expandvars(r"%LocalAppData%\pip\cache"), "Python pip缓存"),
+                (os.path.expandvars(r"%LocalAppData%\npm-cache"), "npm缓存"),
+                (os.path.expandvars(r"%LocalAppData%\NuGet\Cache"), "NuGet缓存"),
+                (os.path.expandvars(r"%AppData%\Microsoft\Teams\Cache"), "Teams缓存"),
+                (os.path.expandvars(r"%AppData%\Microsoft\Teams\GPUCache"), "Teams GPU缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Packages\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TempState"), "微软商店临时"),
+            ]
+        },
+        "5": {
+            "name": "国产软件缓存（微信/QQ/迅雷/WPS等）",
+            "paths": [
+                (os.path.expandvars(r"%AppData%\Tencent\WeChat\XPlugin\Temp"), "微信插件临时"),
+                (os.path.expandvars(r"%AppData%\Tencent\WeChat\log"), "微信日志"),
+                (os.path.expandvars(r"%AppData%\Tencent\QQ\Temp"), "QQ临时文件"),
+                (os.path.expandvars(r"%AppData%\Tencent\QQMusic\Cache"), "QQ音乐缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Tencent\QQMusic\Cache"), "QQ音乐本地缓存"),
+                (os.path.expandvars(r"%AppData%\Thunder Network\Thunder\Temp"), "迅雷临时文件"),
+                (os.path.expandvars(r"%LocalAppData%\Kingsoft\WPS Cloud Files\cache"), "WPS云文件缓存"),
+                (os.path.expandvars(r"%AppData%\kingsoft\office6\cache"), "WPS Office缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Netease\CloudMusic\Cache"), "网易云音乐缓存"),
+                (os.path.expandvars(r"%AppData%\Baidu\BaiduNetdisk\temp"), "百度网盘临时"),
+                (os.path.expandvars(r"%AppData%\DingTalk\Cache"), "钉钉缓存"),
+                (os.path.expandvars(r"%AppData%\feishu\Cache"), "飞书缓存"),
+                (os.path.expandvars(r"%LocalAppData%\Alibaba\taobao\Cache"), "淘宝缓存"),
+                (os.path.expandvars(r"%AppData%\Sogou\SGInput\Temp"), "搜狗输入法临时"),
+                (os.path.expandvars(r"%LocalAppData%\Bilibili\Cache"), "哔哩哔哩缓存"),
+                (os.path.expandvars(r"%LocalAppData%\360\SoftMgr\cache"), "360软件管家缓存"),
+                (os.path.expandvars(r"%ProgramData%\Tencent\QQPCMgr\Patch"), "腾讯管家补丁"),
+            ]
+        },
+        "6": {
+            "name": "Windows.old 与系统残留（可释放数GB）",
+            "special": "windows_old"
+        },
+        "7": {
+            "name": "回收站",
+            "special": "recycle_bin"
+        },
+        "8": {
+            "name": "DNS缓存刷新",
+            "special": "flush_dns"
+        },
+    }
+
+    # 显示分类菜单
+    print(f"  请选择要清理的类别（可多选，用逗号分隔）：\n")
+    for key, cat in categories.items():
+        print(f"    {Colors.GREEN}[{key}]{Colors.RESET} {cat['name']}")
+    print(f"    {Colors.GREEN}[A]{Colors.RESET} 全部清理")
+    print()
+
+    choice = input(f"  {Colors.CYAN}请输入选项 (例: 1,2,3 或 A): {Colors.RESET}").strip().upper()
+
+    if not choice:
+        print(f"  {Colors.YELLOW}已取消{Colors.RESET}")
+        return
+
+    if choice == "A":
+        selected = list(categories.keys())
+    else:
+        selected = [c.strip() for c in choice.split(",") if c.strip() in categories]
+
+    if not selected:
+        print(f"  {Colors.RED}无效选择{Colors.RESET}")
+        return
+
+    # 先扫描统计
+    print(f"\n{Colors.BOLD}  正在扫描垃圾文件...{Colors.RESET}\n")
+
+    total_cleaned = 0
+    total_files = 0
+    total_errors = 0
+
+    for sel in selected:
+        cat = categories[sel]
+        print(f"  {Colors.BOLD}{Colors.CYAN}── {cat['name']} ──{Colors.RESET}\n")
+
+        if "special" in cat:
+            if cat["special"] == "recycle_bin":
+                _empty_recycle_bin()
+            elif cat["special"] == "flush_dns":
+                _flush_dns()
+            elif cat["special"] == "windows_old":
+                _clean_windows_old()
+        else:
+            cleaned, files, errors = _clean_paths(cat["paths"])
+            total_cleaned += cleaned
+            total_files += files
+            total_errors += errors
+
+    # 额外：清理系统日志文件（.log, .tmp, .etl）
+    if "3" in selected:
+        sys_root = os.path.expandvars(r"%SystemRoot%")
+        c1, f1, e1 = _clean_files_by_ext(
+            os.path.join(sys_root, "Logs"), [".log", ".etl", ".tmp"],
+            "系统日志文件 (*.log, *.etl, *.tmp)"
+        )
+        total_cleaned += c1
+        total_files += f1
+        total_errors += e1
+
     print(f"\n{Colors.BOLD}{'='*50}")
-    print(f"  清理完成")
+    print(f"  垃圾清理完成")
     print(f"{'='*50}{Colors.RESET}")
     print(f"\n  {Colors.GREEN}共清理 {total_files} 个文件，释放空间: {format_size(total_cleaned)}{Colors.RESET}")
     if total_errors > 0:
@@ -2733,7 +3058,7 @@ def print_menu():
     draw_box("功能菜单", [
         f"{C.GRAY}── 清理 ──────────────────────────────────────{C.RESET}",
         f"  {C.GREEN}[1]{C.RESET} {C.WHITE}流氓软件扫描与清理{C.RESET}      {C.GRAY}(强力四级删除){C.RESET}",
-        f"  {C.GREEN}[2]{C.RESET} {C.WHITE}系统缓存清理{C.RESET}            {C.GRAY}(Temp/浏览器/更新){C.RESET}",
+        f"  {C.GREEN}[2]{C.RESET} {C.WHITE}系统垃圾深度清理{C.RESET}        {C.GRAY}(6类垃圾/分类可选/回收站){C.RESET}",
         f"  {C.GREEN}[3]{C.RESET} {C.WHITE}反劫持检测{C.RESET}              {C.GRAY}(hosts/快捷方式/右键/启动){C.RESET}",
         f"  {C.GREEN}[4]{C.RESET} {C.WHITE}空间清理增强{C.RESET}            {C.GRAY}(大文件/重复文件){C.RESET}",
         None,

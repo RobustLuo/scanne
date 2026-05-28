@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>超级骆狗工具箱 v3.0</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "on-background":"#191c1e","on-primary":"#ffffff","on-surface":"#191c1e",
+        "on-primary-fixed":"#001e30","surface-container-highest":"#e0e3e6",
+        "on-primary-fixed-variant":"#004b71","surface-tint":"#006494",
+        "surface-container-low":"#f2f4f7","on-error":"#ffffff",
+        "on-tertiary":"#ffffff","surface-container":"#eceef1",
+        "on-secondary-fixed":"#0b1d29","on-primary-container":"#b6ddff",
+        "error":"#ba1a1a","on-error-container":"#93000a",
+        "inverse-surface":"#2d3133","primary":"#004b71",
+        "on-secondary-container":"#546573","surface-bright":"#f7f9fc",
+        "secondary-fixed":"#d3e5f5","on-secondary":"#ffffff",
+        "surface-dim":"#d8dadd","primary-fixed-dim":"#8ecdff",
+        "on-surface-variant":"#40484f","secondary-container":"#d0e2f3",
+        "primary-fixed":"#cbe6ff","surface-container-high":"#e6e8eb",
+        "surface":"#f7f9fc","surface-variant":"#e0e3e6",
+        "inverse-primary":"#8ecdff","outline-variant":"#c0c7d0",
+        "secondary":"#4f606e","primary-container":"#006494",
+        "secondary-fixed-dim":"#b7c9d9","inverse-on-surface":"#eff1f4",
+        "surface-container-lowest":"#ffffff","outline":"#707880",
+        "error-container":"#ffdad6","on-secondary-fixed-variant":"#384956",
+        "background":"#f7f9fc"
+      },
+      borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},
+      spacing:{"xl":"32px","gutter":"24px","md":"16px","lg":"24px","unit":"8px","xs":"4px","sm":"8px"},
+      fontFamily:{"mono":["JetBrains Mono","monospace"],"headline-sm":["Inter"],"label-md":["Inter"],"headline-md":["Inter"],"title-md":["Inter"],"body-lg":["Inter"],"label-lg":["Inter"],"body-md":["Inter"],"title-lg":["Inter"]},
+      fontSize:{
+        "headline-sm":["24px",{"lineHeight":"32px","fontWeight":"500"}],
+        "label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+        "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+        "title-md":["16px",{"lineHeight":"24px","letterSpacing":"0.15px","fontWeight":"600"}],
+        "body-lg":["16px",{"lineHeight":"24px","letterSpacing":"0.5px","fontWeight":"400"}],
+        "label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.1px","fontWeight":"500"}],
+        "body-md":["14px",{"lineHeight":"20px","letterSpacing":"0.25px","fontWeight":"400"}],
+        "title-lg":["22px",{"lineHeight":"28px","fontWeight":"500"}]
+      }
+    }
+  }
+}
+</script>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+.console-scrollbar::-webkit-scrollbar{width:4px}
+.console-scrollbar::-webkit-scrollbar-track{background:transparent}
+.console-scrollbar::-webkit-scrollbar-thumb{background:#c0c7d0;border-radius:10px}
+.nav-item{cursor:pointer;transition:all .15s}
+.nav-item.active{background:#d0e2f3;color:#004b71;font-weight:bold}
+.nav-item:not(.active):hover{background:#e0e3e6}
+.page-panel{display:none;flex-direction:column;gap:24px}
+.page-panel.active{display:flex}
+</style>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-hidden">
+
+<!-- 侧边导航 -->
+<aside class="w-[260px] h-screen fixed left-0 top-0 bg-surface-container-low shadow-sm flex flex-col py-xl z-50">
+  <div class="px-lg mb-xl">
+    <h1 class="font-headline-sm text-headline-sm text-primary font-bold">骆狗工具箱</h1>
+    <p class="text-on-surface-variant font-label-md">System Optimizer v3.0</p>
+  </div>
+  <nav class="flex-1 px-md space-y-xs overflow-y-auto" id="sideNav">
+    <div class="nav-item active flex items-center gap-md px-lg py-md rounded-xl" data-page="scan">
+      <span class="material-symbols-outlined">search</span><span class="font-title-md text-title-md">流氓扫描</span>
+    </div>
+    <div class="nav-item flex items-center gap-md px-lg py-md rounded-xl text-on-surface-variant" data-page="clean">
+      <span class="material-symbols-outlined">delete_sweep</span><span class="font-title-md text-title-md">垃圾清理</span>
+    </div>
+    <div class="nav-item flex items-center gap-md px-lg py-md rounded-xl text-on-surface-variant" data-page="hijack">
+      <span class="material-symbols-outlined">shield</span><span class="font-title-md text-title-md">反劫持</span>
+    </div>
+    <div class="nav-item flex items-center gap-md px-lg py-md rounded-xl text-on-surface-variant" data-page="space">
+      <span class="material-symbols-outlined">hard_drive</span><span class="font-title-md text-title-md">空间管理</span>
+    </div>
+    <div class="nav-item flex items-center gap-md px-lg py-md rounded-xl text-on-surface-variant" data-page="security">
+      <span class="material-symbols-outlined">security</span><span class="font-title-md text-title-md">安全审计</span>
+    </div>
+    <div class="nav-item flex items-center gap-md px-lg py-md rounded-xl text-on-surface-variant" data-page="network">
+      <span class="material-symbols-outlined">wifi</span><span class="font-title-md text-title-md">网络工具</span>
+    </div>
+    <div class="nav-item flex items-center gap-md px-lg py-md rounded-xl text-on-surface-variant" data-page="sysinfo">
+      <span class="material-symbols-outlined">info</span><span class="font-title-md text-title-md">系统信息</span>
+    </div>
+    <div class="nav-item flex items-center gap-md px-lg py-md rounded-xl text-on-surface-variant" data-page="install">
+      <span class="material-symbols-outlined">build</span><span class="font-title-md text-title-md">装机助手</span>
+    </div>
+    <div class="nav-item flex items-center gap-md px-lg py-md rounded-xl text-on-surface-variant" data-page="perf">
+      <span class="material-symbols-outlined">speed</span><span class="font-title-md text-title-md">性能优化</span>
+    </div>
+  </nav>
+  <div class="px-lg mt-auto">
+    <div class="p-md bg-surface-container rounded-2xl flex items-center gap-md">
+      <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+      </div>
+      <div>
+        <p class="font-label-lg text-on-surface">管理员</p>
+        <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">已提权运行</p>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- 顶栏 -->
+<header class="flex justify-between items-center h-16 px-gutter ml-[260px] w-[calc(100%-260px)] bg-surface fixed top-0 z-40 shadow-sm">
+  <h2 class="font-headline-sm text-headline-sm text-primary font-bold" id="pageTitle">流氓扫描</h2>
+  <div class="flex items-center gap-xs">
+    <span class="material-symbols-outlined p-2 hover:bg-surface-container-high rounded-full cursor-pointer">notifications</span>
+    <span class="material-symbols-outlined p-2 hover:bg-surface-container-high rounded-full cursor-pointer">help_outline</span>
+  </div>
+</header>
+
+<!-- 内容区 -->
+<div class="ml-[260px] mt-16 p-gutter h-[calc(100vh-64px)] overflow-y-auto">
+
+<!-- ===== 流氓扫描 ===== -->
+<div class="page-panel active" id="page-scan">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">search</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">流氓软件扫描与清理</h3>
+      <p class="text-on-surface-variant font-body-lg">全盘扫描 360 / 2345 / 百度 / 金山等流氓软件残留，支持四级强力删除</p>
+    </div>
+  </section>
+  <section class="flex gap-md">
+    <button class="px-xl py-md bg-primary text-on-primary rounded-full font-title-md flex items-center gap-md hover:shadow-lg transition-all active:scale-95" onclick="runTask('scan')">
+      <span class="material-symbols-outlined">play_arrow</span>开始扫描
+    </button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('scan')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-scan"><div class="text-outline">[READY] 等待执行扫描...</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 垃圾清理 ===== -->
+<div class="page-panel" id="page-clean">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">delete_sweep</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">系统垃圾深度清理</h3>
+      <p class="text-on-surface-variant font-body-lg">8大类垃圾文件深度清理，强力删除被占用文件</p>
+    </div>
+  </section>
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+    <div class="bg-surface-container-lowest p-lg rounded-[24px] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant flex flex-col justify-between h-[140px]">
+      <div class="flex justify-between items-start"><span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-xl">desktop_windows</span><label class="relative inline-flex items-center cursor-pointer"><input checked type="checkbox" class="sr-only peer"/><div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label></div>
+      <div><h4 class="font-title-md text-on-surface">系统临时文件</h4><p class="font-label-md text-on-surface-variant">Temp / Prefetch / 缩略图</p></div>
+    </div>
+    <div class="bg-surface-container-lowest p-lg rounded-[24px] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant flex flex-col justify-between h-[140px]">
+      <div class="flex justify-between items-start"><span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-xl">language</span><label class="relative inline-flex items-center cursor-pointer"><input checked type="checkbox" class="sr-only peer"/><div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label></div>
+      <div><h4 class="font-title-md text-on-surface">浏览器缓存</h4><p class="font-label-md text-on-surface-variant">Chrome / Edge / Firefox</p></div>
+    </div>
+    <div class="bg-surface-container-lowest p-lg rounded-[24px] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant flex flex-col justify-between h-[140px]">
+      <div class="flex justify-between items-start"><span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-xl">update</span><label class="relative inline-flex items-center cursor-pointer"><input checked type="checkbox" class="sr-only peer"/><div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label></div>
+      <div><h4 class="font-title-md text-on-surface">Windows更新与日志</h4><p class="font-label-md text-on-surface-variant">更新缓存 / 错误报告 / 转储</p></div>
+    </div>
+    <div class="bg-surface-container-lowest p-lg rounded-[24px] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant flex flex-col justify-between h-[140px]">
+      <div class="flex justify-between items-start"><span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-xl">apps</span><label class="relative inline-flex items-center cursor-pointer"><input checked type="checkbox" class="sr-only peer"/><div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label></div>
+      <div><h4 class="font-title-md text-on-surface">常用软件缓存</h4><p class="font-label-md text-on-surface-variant">pip / npm / Teams</p></div>
+    </div>
+    <div class="bg-surface-container-lowest p-lg rounded-[24px] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant flex flex-col justify-between h-[140px]">
+      <div class="flex justify-between items-start"><span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-xl">chat</span><label class="relative inline-flex items-center cursor-pointer"><input checked type="checkbox" class="sr-only peer"/><div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label></div>
+      <div><h4 class="font-title-md text-on-surface">国产软件缓存</h4><p class="font-label-md text-on-surface-variant">微信 / QQ / 迅雷 / WPS</p></div>
+    </div>
+    <div class="bg-surface-container-lowest p-lg rounded-[24px] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant flex flex-col justify-between h-[140px]">
+      <div class="flex justify-between items-start"><span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-xl">folder_delete</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer"/><div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label></div>
+      <div><h4 class="font-title-md text-on-surface">Windows.old</h4><p class="font-label-md text-on-surface-variant">系统升级残留文件</p></div>
+    </div>
+    <div class="bg-surface-container-lowest p-lg rounded-[24px] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant flex flex-col justify-between h-[140px]">
+      <div class="flex justify-between items-start"><span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-xl">delete</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer"/><div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label></div>
+      <div><h4 class="font-title-md text-on-surface">回收站</h4><p class="font-label-md text-on-surface-variant">清空所有回收站</p></div>
+    </div>
+    <div class="bg-surface-container-lowest p-lg rounded-[24px] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant flex flex-col justify-between h-[140px]">
+      <div class="flex justify-between items-start"><span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-xl">dns</span><label class="relative inline-flex items-center cursor-pointer"><input checked type="checkbox" class="sr-only peer"/><div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label></div>
+      <div><h4 class="font-title-md text-on-surface">DNS缓存</h4><p class="font-label-md text-on-surface-variant">刷新DNS解析缓存</p></div>
+    </div>
+  </section>
+  <section class="flex items-center gap-md">
+    <button class="px-xl py-md bg-primary text-on-primary rounded-full font-title-md flex items-center gap-md hover:shadow-lg transition-all active:scale-95" onclick="runTask('clean')">
+      <span class="material-symbols-outlined">auto_fix_high</span>一键清理
+    </button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('clean')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-clean"><div class="text-outline">[READY] 选择分类后点击清理...</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 反劫持 ===== -->
+<div class="page-panel" id="page-hijack">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">shield</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">反劫持检测</h3>
+      <p class="text-on-surface-variant font-body-lg">检测 Hosts劫持 / 浏览器快捷方式篡改 / 右键菜单注入 / 可疑启动项</p>
+    </div>
+  </section>
+  <section class="flex flex-wrap gap-md">
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack')"><span class="material-symbols-outlined text-[18px]">description</span>Hosts 检测与还原</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack')"><span class="material-symbols-outlined text-[18px]">link</span>快捷方式劫持检测</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack')"><span class="material-symbols-outlined text-[18px]">menu</span>右键菜单清理</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack')"><span class="material-symbols-outlined text-[18px]">rocket_launch</span>全部启动项总览</button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('hijack')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-hijack"><div class="text-outline">[READY] 等待执行检测...</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 空间管理 ===== -->
+<div class="page-panel" id="page-space">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">hard_drive</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">空间清理增强</h3>
+      <p class="text-on-surface-variant font-body-lg">查找大文件 (>=100MB Top30) / 重复文件 (SHA1比对)</p>
+    </div>
+  </section>
+  <section class="flex flex-wrap gap-md">
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('space')"><span class="material-symbols-outlined text-[18px]">file_present</span>大文件查找 (Top30)</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('space')"><span class="material-symbols-outlined text-[18px]">content_copy</span>重复文件查找 (SHA1)</button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('space')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-space"><div class="text-outline">[READY] 等待执行...</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 安全审计 ===== -->
+<div class="page-panel" id="page-security">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">security</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">安全审计套件</h3>
+      <p class="text-on-surface-variant font-body-lg">可疑进程扫描 / Windows Defender 排除项审计 / 未签名驱动检查</p>
+    </div>
+  </section>
+  <section class="flex flex-wrap gap-md">
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security')"><span class="material-symbols-outlined text-[18px]">bug_report</span>可疑进程扫描</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security')"><span class="material-symbols-outlined text-[18px]">verified_user</span>Defender 排除项</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security')"><span class="material-symbols-outlined text-[18px]">memory</span>未签名驱动</button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('security')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-security"><div class="text-outline">[READY] 等待执行...</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 网络工具 ===== -->
+<div class="page-panel" id="page-network">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">wifi</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">网络工具集</h3>
+      <p class="text-on-surface-variant font-body-lg">DNS/代理设置检查 / 端口占用查询 / 网络诊断一键修复</p>
+    </div>
+  </section>
+  <section class="flex flex-wrap gap-md">
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network')"><span class="material-symbols-outlined text-[18px]">dns</span>DNS / 代理检查</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network')"><span class="material-symbols-outlined text-[18px]">lan</span>端口占用查询</button>
+    <button class="px-lg py-md bg-error text-on-error rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network')"><span class="material-symbols-outlined text-[18px]">restart_alt</span>网络诊断修复</button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('network')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-network"><div class="text-outline">[READY] 等待执行...</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 系统信息 ===== -->
+<div class="page-panel" id="page-sysinfo">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">info</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">系统信息</h3>
+      <p class="text-on-surface-variant font-body-lg">CPU / 内存 / 磁盘使用情况一览</p>
+    </div>
+  </section>
+  <section class="flex gap-md">
+    <button class="px-xl py-md bg-primary text-on-primary rounded-full font-title-md flex items-center gap-md hover:shadow-lg transition-all active:scale-95" onclick="runTask('sysinfo')">
+      <span class="material-symbols-outlined">monitoring</span>查看系统信息
+    </button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('sysinfo')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-sysinfo"><div class="text-outline">[READY] 等待执行...</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 装机助手 ===== -->
+<div class="page-panel" id="page-install">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">build</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">装机助手</h3>
+      <p class="text-on-surface-variant font-body-lg">系统重置 / U盘制作 (Rufus/Ventoy) / 高级启动 / 装机教程</p>
+    </div>
+  </section>
+  <section class="flex flex-wrap gap-md">
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install')"><span class="material-symbols-outlined text-[18px]">refresh</span>系统重置</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install')"><span class="material-symbols-outlined text-[18px]">usb</span>U盘制作指南</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install')"><span class="material-symbols-outlined text-[18px]">settings_power</span>高级启动</button>
+    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('install')"><span class="material-symbols-outlined text-[18px]">school</span>装机教程</button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('install')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-install"><div class="text-outline">[READY] 等待执行...</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 性能优化 ===== -->
+<div class="page-panel" id="page-perf">
+  <section class="flex items-center gap-md">
+    <div class="bg-primary-container p-3 rounded-2xl"><span class="material-symbols-outlined text-on-primary text-[32px]">speed</span></div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">性能优化</h3>
+      <p class="text-on-surface-variant font-body-lg">智能识别设备类型，一键差异化优化，支持一键还原</p>
+    </div>
+  </section>
+  <section class="flex flex-wrap gap-md">
+    <button class="px-xl py-md bg-primary text-on-primary rounded-full font-title-md flex items-center gap-md hover:shadow-lg transition-all active:scale-95" onclick="runTask('perf')">
+      <span class="material-symbols-outlined">bolt</span>一键优化
+    </button>
+    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('perf')">
+      <span class="material-symbols-outlined text-[18px]">undo</span>还原优化
+    </button>
+    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('perf')">
+      <span class="material-symbols-outlined text-[18px]">battery_charging_full</span>电源方案
+    </button>
+  </section>
+  <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
+    <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('perf')">清空</button></div>
+    <div class="bg-surface-container-low rounded-[24px] p-lg flex-1 overflow-hidden border border-outline-variant shadow-inner">
+      <div class="h-full overflow-y-auto font-mono text-[13px] leading-relaxed text-on-surface-variant console-scrollbar" id="log-perf"><div class="text-outline">[READY] 等待执行...</div></div>
+    </div>
+  </section>
+</div>
+
+</div><!-- /内容区 -->
+
+<script>
+// 导航切换
+const navItems = document.querySelectorAll('.nav-item');
+const pages = document.querySelectorAll('.page-panel');
+const pageTitle = document.getElementById('pageTitle');
+const titles = {scan:'流氓扫描',clean:'垃圾清理',hijack:'反劫持',space:'空间管理',security:'安全审计',network:'网络工具',sysinfo:'系统信息',install:'装机助手',perf:'性能优化'};
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const id = item.dataset.page;
+    pages.forEach(p => p.classList.remove('active'));
+    navItems.forEach(n => {n.classList.remove('active');n.classList.add('text-on-surface-variant')});
+    document.getElementById('page-'+id).classList.add('active');
+    item.classList.add('active');
+    item.classList.remove('text-on-surface-variant');
+    pageTitle.textContent = titles[id];
+  });
+});
+
+// 模拟运行
+const fakeLogs = {
+  scan:['正在枚举磁盘驱动器...','扫描 C:\\ ...','发现: C:\\Program Files\\360Safe\\ (360安全卫士)','发现: C:\\Program Files (x86)\\2345Explorer\\ (2345浏览器)','发现: 注册表 HKLM\\SOFTWARE\\2345\\','扫描 D:\\ ...','扫描完成，共发现 3 处残留'],
+  clean:['清理: 用户临时文件 (C:\\Users\\...\\Temp)','  大小: 1.23 GB -> 已清理 1.18 GB','清理: Chrome缓存','  大小: 890 MB -> 已清理 890 MB','清理: Windows更新缓存','  大小: 256 MB -> 已清理 256 MB','清理: 微信缓存 (WeChat Files\\...)','  大小: 2.1 GB -> 已清理 2.1 GB','','共清理 2847 个文件，释放空间: 4.43 GB'],
+  hijack:['检查 Hosts 文件...','  C:\\Windows\\System32\\drivers\\etc\\hosts','  发现 2 条可疑劫持记录:','    127.0.0.1  www.safe360.cn','    0.0.0.0  hao123.com','检查浏览器快捷方式...','  Chrome.lnk 目标参数正常','  Edge.lnk 目标参数正常','检查完成'],
+  space:['正在扫描 C:\\ 大文件 (>=100MB)...','  1. C:\\pagefile.sys  8.00 GB','  2. C:\\hiberfil.sys  6.40 GB','  3. D:\\Downloads\\Win11.iso  5.20 GB','  ...','Top 30 大文件扫描完成'],
+  security:['扫描可疑进程...','  PID 1234: svchost.exe [正常]','  PID 5678: unknown_service.exe [可疑! 无签名]','检查 Defender 排除项...','  排除路径: C:\\Tools\\ (用户添加)','检查完成'],
+  network:['当前 DNS: 自动获取','首选DNS: 223.5.5.5 (阿里)','代理设置: 未启用','网络连接: 正常','ping baidu.com: 延迟 12ms'],
+  sysinfo:['操作系统: Windows 11 Pro 23H2','CPU: Intel i7-12700H (14核20线程)','内存: 16.0 GB (已用 9.2 GB / 57%)','磁盘 C:\\: 476 GB (剩余 128 GB)','磁盘 D:\\: 931 GB (剩余 450 GB)'],
+  install:['系统重置向导','  提示: 此操作将通过 systemreset.exe 打开系统重置','  支持: 保留文件重置 / 完全重置','  请在弹出的系统窗口中操作'],
+  perf:['检测设备类型: 笔记本电脑','应用优化方案: 笔记本均衡型','  禁用 Cortana / 搜索索引','  关闭透明特效','  优化电源设置','  清理计划任务','优化完成! 部分设置需重启生效','原始设置已备份到 perf_backup.json']
+};
+
+function runTask(id) {
+  const log = document.getElementById('log-'+id);
+  if(!log) return;
+  const time = () => new Date().toLocaleTimeString('zh-CN',{hour12:false});
+  log.innerHTML += `<div class="text-primary font-bold py-0.5">[${time()}] 开始执行...</div>`;
+  const msgs = fakeLogs[id] || ['执行中...'];
+  let i=0;
+  const iv = setInterval(()=>{
+    if(i>=msgs.length){clearInterval(iv);log.innerHTML+=`<div class="text-primary font-bold py-0.5">[${time()}] 完成</div>`;log.scrollTop=log.scrollHeight;return;}
+    log.innerHTML+=`<div class="py-0.5"><span class="opacity-40">[${time()}]</span> ${msgs[i]}</div>`;
+    log.scrollTop=log.scrollHeight;
+    i++;
+  },350);
+}
+
+function clearLog(id){
+  const log=document.getElementById('log-'+id);
+  if(log) log.innerHTML='<div class="text-outline">[SYSTEM] 日志已清空</div>';
+}
+</script>
+</body></html>
