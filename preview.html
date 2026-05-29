@@ -211,10 +211,10 @@ tailwind.config = {
     </div>
   </section>
   <section class="flex flex-wrap gap-md">
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack')"><span class="material-symbols-outlined text-[18px]">description</span>Hosts 检测与还原</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack')"><span class="material-symbols-outlined text-[18px]">link</span>快捷方式劫持检测</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack')"><span class="material-symbols-outlined text-[18px]">menu</span>右键菜单清理</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack')"><span class="material-symbols-outlined text-[18px]">rocket_launch</span>全部启动项总览</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack','hosts')"><span class="material-symbols-outlined text-[18px]">description</span>Hosts 检测与还原</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack','shortcut')"><span class="material-symbols-outlined text-[18px]">link</span>快捷方式劫持检测</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack','context')"><span class="material-symbols-outlined text-[18px]">menu</span>右键菜单清理</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('hijack','startups')"><span class="material-symbols-outlined text-[18px]">rocket_launch</span>全部启动项总览</button>
   </section>
   <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
     <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('hijack')">清空</button></div>
@@ -234,8 +234,8 @@ tailwind.config = {
     </div>
   </section>
   <section class="flex flex-wrap gap-md">
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('space')"><span class="material-symbols-outlined text-[18px]">file_present</span>大文件查找 (Top30)</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('space')"><span class="material-symbols-outlined text-[18px]">content_copy</span>重复文件查找 (SHA1)</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('space','large')"><span class="material-symbols-outlined text-[18px]">file_present</span>大文件查找 (Top30)</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('space','dup')"><span class="material-symbols-outlined text-[18px]">content_copy</span>重复文件查找 (SHA1)</button>
   </section>
   <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
     <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('space')">清空</button></div>
@@ -255,9 +255,9 @@ tailwind.config = {
     </div>
   </section>
   <section class="flex flex-wrap gap-md">
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security')"><span class="material-symbols-outlined text-[18px]">bug_report</span>可疑进程扫描</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security')"><span class="material-symbols-outlined text-[18px]">verified_user</span>Defender 排除项</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security')"><span class="material-symbols-outlined text-[18px]">memory</span>未签名驱动</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security','process')"><span class="material-symbols-outlined text-[18px]">bug_report</span>可疑进程扫描</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security','defender')"><span class="material-symbols-outlined text-[18px]">verified_user</span>Defender 排除项</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('security','driver')"><span class="material-symbols-outlined text-[18px]">memory</span>未签名驱动</button>
   </section>
   <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
     <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('security')">清空</button></div>
@@ -277,9 +277,9 @@ tailwind.config = {
     </div>
   </section>
   <section class="flex flex-wrap gap-md">
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network')"><span class="material-symbols-outlined text-[18px]">dns</span>DNS / 代理检查</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network')"><span class="material-symbols-outlined text-[18px]">lan</span>端口占用查询</button>
-    <button class="px-lg py-md bg-error text-on-error rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network')"><span class="material-symbols-outlined text-[18px]">restart_alt</span>网络诊断修复</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network','dns')"><span class="material-symbols-outlined text-[18px]">dns</span>DNS / 代理检查</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network','port')"><span class="material-symbols-outlined text-[18px]">lan</span>端口占用查询</button>
+    <button class="px-lg py-md bg-error text-on-error rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('network','diag')"><span class="material-symbols-outlined text-[18px]">restart_alt</span>网络诊断修复</button>
   </section>
   <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
     <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('network')">清空</button></div>
@@ -321,10 +321,10 @@ tailwind.config = {
     </div>
   </section>
   <section class="flex flex-wrap gap-md">
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install')"><span class="material-symbols-outlined text-[18px]">refresh</span>系统重置</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install')"><span class="material-symbols-outlined text-[18px]">usb</span>U盘制作指南</button>
-    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install')"><span class="material-symbols-outlined text-[18px]">settings_power</span>高级启动</button>
-    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('install')"><span class="material-symbols-outlined text-[18px]">school</span>装机教程</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install','reset')"><span class="material-symbols-outlined text-[18px]">refresh</span>系统重置</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install','usb')"><span class="material-symbols-outlined text-[18px]">usb</span>U盘制作指南</button>
+    <button class="px-lg py-md bg-primary text-on-primary rounded-full font-label-lg flex items-center gap-sm hover:shadow-lg transition-all active:scale-95" onclick="runTask('install','boot')"><span class="material-symbols-outlined text-[18px]">settings_power</span>高级启动</button>
+    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('install','tutorial')"><span class="material-symbols-outlined text-[18px]">school</span>装机教程</button>
   </section>
   <section class="flex-1 flex flex-col gap-sm min-h-[300px]">
     <div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">terminal</span><h4 class="font-title-md">执行日志</h4></div><button class="text-primary font-label-lg hover:underline" onclick="clearLog('install')">清空</button></div>
@@ -344,13 +344,13 @@ tailwind.config = {
     </div>
   </section>
   <section class="flex flex-wrap gap-md">
-    <button class="px-xl py-md bg-primary text-on-primary rounded-full font-title-md flex items-center gap-md hover:shadow-lg transition-all active:scale-95" onclick="runTask('perf')">
+    <button class="px-xl py-md bg-primary text-on-primary rounded-full font-title-md flex items-center gap-md hover:shadow-lg transition-all active:scale-95" onclick="runTask('perf','optimize')">
       <span class="material-symbols-outlined">bolt</span>一键优化
     </button>
-    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('perf')">
+    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('perf','restore')">
       <span class="material-symbols-outlined text-[18px]">undo</span>还原优化
     </button>
-    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('perf')">
+    <button class="px-lg py-md bg-surface-container-highest text-on-surface rounded-full font-label-lg flex items-center gap-sm hover:shadow-md transition-all active:scale-95" onclick="runTask('perf','power')">
       <span class="material-symbols-outlined text-[18px]">battery_charging_full</span>电源方案
     </button>
   </section>
@@ -396,24 +396,105 @@ const fakeLogs = {
   perf:['检测设备类型: 笔记本电脑','应用优化方案: 笔记本均衡型','  禁用 Cortana / 搜索索引','  关闭透明特效','  优化电源设置','  清理计划任务','优化完成! 部分设置需重启生效','原始设置已备份到 perf_backup.json']
 };
 
-function runTask(id) {
+// ============ 工具 ============
+const _time = () => new Date().toLocaleTimeString('zh-CN',{hour12:false});
+function _esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _hasBackend(){return !!(window.pywebview && window.pywebview.api && window.pywebview.api.run_task);}
+
+let __busy = false;
+
+// ============ 后端推送日志的接收口 ============
+window.appendLog = function(id, text){
   const log = document.getElementById('log-'+id);
   if(!log) return;
-  const time = () => new Date().toLocaleTimeString('zh-CN',{hour12:false});
-  log.innerHTML += `<div class="text-primary font-bold py-0.5">[${time()}] 开始执行...</div>`;
+  let cls = 'py-0.5';
+  let body = `<span class="opacity-40">[${_time()}]</span> ${_esc(text)}`;
+  const t = String(text);
+  if(t.startsWith('[ERROR]')) { cls += ' text-error font-bold'; }
+  else if(t.startsWith('[WARN]')) { cls += ' text-error'; }
+  else if(t.startsWith('[INFO]') || t.startsWith('[OK]')) { cls += ' text-primary'; }
+  const div = document.createElement('div');
+  div.className = cls;
+  div.innerHTML = body;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+};
+
+window.taskDone = function(id, success){
+  const log = document.getElementById('log-'+id);
+  if(log){
+    const div = document.createElement('div');
+    div.className = (success ? 'text-primary' : 'text-error') + ' font-bold py-0.5';
+    div.textContent = `[${_time()}] ${success ? '✅ 完成' : '❌ 失败'}`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+  __busy = false;
+};
+
+// ============ 任务触发 ============
+function runTask(id, action) {
+  const log = document.getElementById('log-'+id);
+  if(!log) return;
+
+  if(_hasBackend()){
+    if(__busy){
+      window.appendLog(id, '[WARN] 已有任务在执行中，请等待...');
+      return;
+    }
+    __busy = true;
+    log.innerHTML += `<div class="text-primary font-bold py-0.5">[${_time()}] 开始执行...</div>`;
+    window.pywebview.api.run_task(id, action || null).then(r => {
+      if(r && !r.ok){ __busy = false; }
+    }).catch(e => {
+      window.appendLog(id, '[ERROR] ' + (e && e.message || e));
+      __busy = false;
+    });
+    return;
+  }
+
+  // 纯浏览器演示模式
+  log.innerHTML += `<div class="text-primary font-bold py-0.5">[${_time()}] 开始执行（演示）...</div>`;
   const msgs = fakeLogs[id] || ['执行中...'];
   let i=0;
   const iv = setInterval(()=>{
-    if(i>=msgs.length){clearInterval(iv);log.innerHTML+=`<div class="text-primary font-bold py-0.5">[${time()}] 完成</div>`;log.scrollTop=log.scrollHeight;return;}
-    log.innerHTML+=`<div class="py-0.5"><span class="opacity-40">[${time()}]</span> ${msgs[i]}</div>`;
-    log.scrollTop=log.scrollHeight;
+    if(i>=msgs.length){
+      clearInterval(iv);
+      log.innerHTML += `<div class="text-primary font-bold py-0.5">[${_time()}] 完成（演示）</div>`;
+      log.scrollTop = log.scrollHeight;
+      return;
+    }
+    log.innerHTML += `<div class="py-0.5"><span class="opacity-40">[${_time()}]</span> ${_esc(msgs[i])}</div>`;
+    log.scrollTop = log.scrollHeight;
     i++;
   },350);
 }
 
 function clearLog(id){
-  const log=document.getElementById('log-'+id);
-  if(log) log.innerHTML='<div class="text-outline">[SYSTEM] 日志已清空</div>';
+  const log = document.getElementById('log-'+id);
+  if(log) log.innerHTML = '<div class="text-outline">[SYSTEM] 日志已清空</div>';
 }
+
+// ============ pywebview 就绪后：检测后端状态并反映到顶栏/底部 ============
+window.addEventListener('pywebviewready', () => {
+  try {
+    window.pywebview.api.backend_ready().then(info => {
+      const banner = document.createElement('div');
+      banner.className = 'text-outline text-xs';
+      banner.textContent = info.ok
+        ? `[BACKEND] scanner.py 已就绪 (platform=${info.platform})`
+        : `[BACKEND] scanner.py 加载失败: ${info.err}`;
+      const logs = document.querySelectorAll('[id^="log-"]');
+      logs.forEach(l => l.appendChild(banner.cloneNode(true)));
+    });
+    window.pywebview.api.is_admin().then(isAdmin => {
+      const card = document.querySelector('aside .bg-surface-container p.text-\\[10px\\]');
+      if(card){
+        card.textContent = isAdmin ? '已提权运行' : '未提权 (建议右键管理员运行)';
+        if(!isAdmin) card.classList.add('text-error');
+      }
+    });
+  } catch(e){}
+});
 </script>
 </body></html>
