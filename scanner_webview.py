@@ -37,6 +37,30 @@ except Exception as e:
 
 
 # ============================================================
+# 1.5 Web UI 模式下替换 input()，防止阻塞线程
+#     所有确认提示默认返回 "n"（安全：不自动执行破坏性操作）
+# ============================================================
+_original_input = __builtins__.input if isinstance(__builtins__, dict) else __builtins__.input
+
+
+def _safe_input(prompt=""):
+    """Web UI 下非交互式 input：打印提示 + 返回安全默认值"""
+    print(f"[需要确认] {prompt.rstrip()}(Web UI 模式默认跳过)")
+    return "n"
+
+if SCANNER_OK:
+    try:
+        if isinstance(__builtins__, dict):
+            __builtins__["input"] = _safe_input
+        else:
+            __builtins__.input = _safe_input
+        import builtins
+        builtins.input = _safe_input
+    except Exception:
+        pass
+
+
+# ============================================================
 # 2. stdout/stderr → 网页日志面板 的流式重定向
 # ============================================================
 
