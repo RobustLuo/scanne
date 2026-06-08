@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # 发 Release 需要写权限
+  contents: write
 
 jobs:
   build:
@@ -20,18 +20,22 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install PyInstaller
-        run: pip install pyinstaller
+      - name: Install dependencies
+        run: pip install pyinstaller pywebview
 
-      - name: Build EXE
+      - name: Build EXE (Web UI 版)
         run: |
-          pyinstaller --onefile `
+          pyinstaller --onefile --windowed `
             --name "超级骆狗工具箱" `
             --version-file version_info.py `
             --manifest app.manifest `
             --uac-admin `
+            --add-data "preview.html;." `
+            --hidden-import webview.platforms.edgechromium `
+            --hidden-import webview.platforms.mshtml `
+            --hidden-import webview.platforms.winforms `
             --clean `
-            scanner.py
+            scanner_webview.py
 
       - name: Upload Artifact (90天有效)
         uses: actions/upload-artifact@v4
@@ -59,7 +63,7 @@ jobs:
 
             ## 运行要求
 
-            - Windows 7 / 10 / 11
+            - Windows 10 / 11（自带 Edge WebView2）
             - 首次启动会自动请求管理员权限（UAC 弹窗，选"是"）
 
             完整功能介绍见 [README](https://github.com/RobustLuo/scanne#readme)
