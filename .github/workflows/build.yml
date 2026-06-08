@@ -40,7 +40,7 @@ jobs:
       - name: Upload Artifact (90天有效)
         uses: actions/upload-artifact@v4
         with:
-          name: 超级骆狗工具箱
+          name: scanner-toolbox
           path: dist/超级骆狗工具箱.exe
 
       - name: Publish Release (仅 tag 触发)
