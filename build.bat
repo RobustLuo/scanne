@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ============================================
-echo   超级骆狗工具箱 - 打包脚本
+echo   超级骆狗工具箱 v2.0 - 本地打包脚本
 echo ============================================
 echo.
 echo   [1] 打包网页版（pywebview · 漂亮 Material 界面，推荐）
@@ -13,11 +13,11 @@ set /p choice="请选择 (1/2/3): "
 echo.
 echo [1/3] 安装依赖...
 if "%choice%"=="2" (
-    pip install pyinstaller customtkinter -q
+    pip install -e ".[dev]" customtkinter -q
 ) else if "%choice%"=="3" (
-    pip install pyinstaller -q
+    pip install -e ".[dev]" -q
 ) else (
-    pip install pyinstaller pywebview -q
+    pip install -e ".[dev]" pywebview -q
 )
 
 if "%choice%"=="2" goto gui
@@ -34,6 +34,26 @@ pyinstaller --onefile --windowed ^
     --hidden-import webview.platforms.edgechromium ^
     --hidden-import webview.platforms.mshtml ^
     --hidden-import webview.platforms.winforms ^
+    --hidden-import scanner_toolbox ^
+    --hidden-import scanner_toolbox.config ^
+    --hidden-import scanner_toolbox.config.constants ^
+    --hidden-import scanner_toolbox.config.malware_db ^
+    --hidden-import scanner_toolbox.core ^
+    --hidden-import scanner_toolbox.core.scanner ^
+    --hidden-import scanner_toolbox.core.cleaner ^
+    --hidden-import scanner_toolbox.core.report ^
+    --hidden-import scanner_toolbox.modules ^
+    --hidden-import scanner_toolbox.modules.cache_clean ^
+    --hidden-import scanner_toolbox.modules.anti_hijack ^
+    --hidden-import scanner_toolbox.modules.space_manager ^
+    --hidden-import scanner_toolbox.modules.security_audit ^
+    --hidden-import scanner_toolbox.modules.network_tools ^
+    --hidden-import scanner_toolbox.modules.sysinfo ^
+    --hidden-import scanner_toolbox.modules.install_helper ^
+    --hidden-import scanner_toolbox.modules.perf_optimizer ^
+    --hidden-import scanner_toolbox.utils ^
+    --hidden-import scanner_toolbox.utils.terminal ^
+    --hidden-import scanner_toolbox.utils.file_ops ^
     --clean ^
     scanner_webview.py
 goto done
@@ -46,6 +66,26 @@ pyinstaller --onefile --windowed ^
     --manifest app.manifest ^
     --uac-admin ^
     --collect-data customtkinter ^
+    --hidden-import scanner_toolbox ^
+    --hidden-import scanner_toolbox.config ^
+    --hidden-import scanner_toolbox.config.constants ^
+    --hidden-import scanner_toolbox.config.malware_db ^
+    --hidden-import scanner_toolbox.core ^
+    --hidden-import scanner_toolbox.core.scanner ^
+    --hidden-import scanner_toolbox.core.cleaner ^
+    --hidden-import scanner_toolbox.core.report ^
+    --hidden-import scanner_toolbox.modules ^
+    --hidden-import scanner_toolbox.modules.cache_clean ^
+    --hidden-import scanner_toolbox.modules.anti_hijack ^
+    --hidden-import scanner_toolbox.modules.space_manager ^
+    --hidden-import scanner_toolbox.modules.security_audit ^
+    --hidden-import scanner_toolbox.modules.network_tools ^
+    --hidden-import scanner_toolbox.modules.sysinfo ^
+    --hidden-import scanner_toolbox.modules.install_helper ^
+    --hidden-import scanner_toolbox.modules.perf_optimizer ^
+    --hidden-import scanner_toolbox.utils ^
+    --hidden-import scanner_toolbox.utils.terminal ^
+    --hidden-import scanner_toolbox.utils.file_ops ^
     --clean ^
     scanner_gui.py
 goto done
@@ -57,8 +97,28 @@ pyinstaller --onefile ^
     --version-file version_info.py ^
     --manifest app.manifest ^
     --uac-admin ^
+    --hidden-import scanner_toolbox ^
+    --hidden-import scanner_toolbox.config ^
+    --hidden-import scanner_toolbox.config.constants ^
+    --hidden-import scanner_toolbox.config.malware_db ^
+    --hidden-import scanner_toolbox.core ^
+    --hidden-import scanner_toolbox.core.scanner ^
+    --hidden-import scanner_toolbox.core.cleaner ^
+    --hidden-import scanner_toolbox.core.report ^
+    --hidden-import scanner_toolbox.modules ^
+    --hidden-import scanner_toolbox.modules.cache_clean ^
+    --hidden-import scanner_toolbox.modules.anti_hijack ^
+    --hidden-import scanner_toolbox.modules.space_manager ^
+    --hidden-import scanner_toolbox.modules.security_audit ^
+    --hidden-import scanner_toolbox.modules.network_tools ^
+    --hidden-import scanner_toolbox.modules.sysinfo ^
+    --hidden-import scanner_toolbox.modules.install_helper ^
+    --hidden-import scanner_toolbox.modules.perf_optimizer ^
+    --hidden-import scanner_toolbox.utils ^
+    --hidden-import scanner_toolbox.utils.terminal ^
+    --hidden-import scanner_toolbox.utils.file_ops ^
     --clean ^
-    scanner.py
+    scanner_toolbox/main.py
 goto done
 
 :done

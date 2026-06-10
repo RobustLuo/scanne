@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scanner-toolbox"
+version = "2.0.0"
+description = "超级骆狗工具箱 - 流氓软件扫描与清理工具"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    {name = "骆狗"}
+]
+keywords = ["scanner", "malware", "cleaner", "windows", "toolbox"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "pywebview>=4.4.0,<5.0.0",
+    "customtkinter>=5.2.0,<6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pyinstaller>=6.0.0,<7.0.0",
+    "pytest>=7.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/robustluo/scanner-toolbox"
+Repository = "https://github.com/robustluo/scanner-toolbox"
+Issues = "https://github.com/robustluo/scanner-toolbox/issues"
+
+[project.scripts]
+scanner-toolbox = "scanner_toolbox.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scanner_toolbox*"]
+
+# ============================================================
+# PyInstaller Build Configuration
+# ============================================================
+[tool.pyinstaller]
+# 通用隐藏导入（所有构建目标共享）
+hiddenimports = [
+    "scanner_toolbox",
+    "scanner_toolbox.config",
+    "scanner_toolbox.config.constants",
+    "scanner_toolbox.config.malware_db",
+    "scanner_toolbox.core",
+    "scanner_toolbox.core.scanner",
+    "scanner_toolbox.core.cleaner",
+    "scanner_toolbox.core.report",
+    "scanner_toolbox.modules",
+    "scanner_toolbox.modules.cache_clean",
+    "scanner_toolbox.modules.anti_hijack",
+    "scanner_toolbox.modules.space_manager",
+    "scanner_toolbox.modules.security_audit",
+    "scanner_toolbox.modules.network_tools",
+    "scanner_toolbox.modules.sysinfo",
+    "scanner_toolbox.modules.install_helper",
+    "scanner_toolbox.modules.perf_optimizer",
+    "scanner_toolbox.utils",
+    "scanner_toolbox.utils.terminal",
+    "scanner_toolbox.utils.file_ops",
+]
+
+# ============================================================
+# Ruff Linter Configuration
+# ============================================================
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501", "SIM108"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# ============================================================
+# Pytest Configuration
+# ============================================================
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

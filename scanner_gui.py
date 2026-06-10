@@ -7,14 +7,16 @@ import os
 import sys
 import threading
 import queue
-import io
-from contextlib import redirect_stdout, redirect_stderr
+import re
 
 import customtkinter as ctk
 
 # 设置主题
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
+
+# 添加项目根目录到 path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # ============================================================
 # 重定向 print 输出到 GUI 日志
@@ -27,8 +29,6 @@ class QueueWriter:
 
     def write(self, text):
         if text.strip():
-            # 去掉 ANSI 颜色码
-            import re
             clean = re.sub(r'\x1b\[[0-9;]*m', '', text)
             self.queue.put(clean)
 
@@ -37,22 +37,32 @@ class QueueWriter:
 
 
 # ============================================================
-# 导入 scanner.py 中的功能函数
+# 从新包结构导入模块
 # ============================================================
 
-# 添加当前目录到 path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# 延迟导入（仅在 Windows 上有效）
-scanner_module = None
-
-def import_scanner():
-    global scanner_module
-    try:
-        import scanner as scanner_module
-        return True
-    except Exception as e:
-        return False
+try:
+    from scanner_toolbox.core.scanner import run_full_scan
+    from scanner_toolbox.core.cleaner import clean_malware
+    from scanner_toolbox.core.report import generate_report
+    from scanner_toolbox.modules.cache_clean import clean_cache
+    from scanner_toolbox.modules.anti_hijack import (
+        scan_hosts, restore_hosts, scan_browser_shortcuts, fix_browser_shortcuts,
+        scan_context_menu, delete_context_menu, list_all_startup
+    )
+    from scanner_toolbox.modules.space_manager import find_big_files, find_duplicate_files
+    from scanner_toolbox.modules.security_audit import (
+        scan_suspicious_processes, scan_defender_exclusions, scan_unsigned_drivers
+    )
+    from scanner_toolbox.modules.network_tools import check_dns_proxy, query_port, network_diagnostic
+    from scanner_toolbox.modules.sysinfo import run_sysinfo
+    from scanner_toolbox.modules.install_helper import run_install_helper
+    from scanner_toolbox.modules.perf_optimizer import run_perf_optimizer
+    from scanner_toolbox.utils.terminal import format_size
+    from scanner_toolbox.config.constants import Colors
+    from scanner_toolbox.config.malware_db import KNOWN_DIRS, KNOWN_FILES
+    MODULES_AVAILABLE = True
+except ImportError:
+    MODULES_AVAILABLE = False
 
 
 # ============================================================
@@ -257,10 +267,25 @@ class App(ctk.CTk):
         pages[key]()
 
     def _get_func(self, name):
-        """安全获取 scanner 模块的函数"""
-        if scanner_module is None:
+        """安全获取功能函数"""
+        if not MODULES_AVAILABLE:
             return None
-        return getattr(scanner_module, name, None)
+        import scanner_toolbox.core.scanner as sc
+        import scanner_toolbox.core.cleaner as cl
+        import scanner_toolbox.core.report as rp
+        import scanner_toolbox.modules.cache_clean as cc
+        import scanner_toolbox.modules.anti_hijack as ah
+        import scanner_toolbox.modules.space_manager as sm
+        import scanner_toolbox.modules.security_audit as sa
+        import scanner_toolbox.modules.network_tools as nt
+        import scanner_toolbox.modules.sysinfo as si
+        import scanner_toolbox.modules.install_helper as ih
+        import scanner_toolbox.modules.perf_optimizer as po
+
+        for mod in [sc, cl, rp, cc, ah, sm, sa, nt, si, ih, po]:
+            if hasattr(mod, name):
+                return getattr(mod, name)
+        return None
 
     def _page_scan(self):
         self.page_title.configure(text="流氓软件扫描与清理")
@@ -491,9 +516,8 @@ class App(ctk.CTk):
 # ============================================================
 
 def main():
-    # 尝试导入 scanner 模块
-    if not import_scanner():
-        print("警告: 无法导入 scanner 模块（可能不在 Windows 环境）")
+    if not MODULES_AVAILABLE:
+        print("警告: 无法导入 scanner_toolbox 模块（可能不在 Windows 环境）")
 
     app = App()
     app.mainloop()

@@ -2,10 +2,10 @@
 超级骆狗工具箱 v3.0 - Web UI 版
 ================================
 用 pywebview 把 preview.html 包装成一个原生桌面 exe 窗口，
-并把网页上的按钮接到 scanner.py 的真实功能上。
+并把网页上的按钮接到 scanner_toolbox 的真实功能上。
 
 界面长相 == preview.html（1:1 一致）
-真实功能 == scanner.py（不改动）
+真实功能 == scanner_toolbox 各模块（不改动）
 """
 
 import os
@@ -19,18 +19,36 @@ from contextlib import redirect_stdout, redirect_stderr
 import webview
 
 # ============================================================
-# 1. 准备：导入 scanner 模块（跨平台容错）
+# 1. 准备：导入 scanner_toolbox 模块（跨平台容错）
 # ============================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
-scanner = None
 SCANNER_OK = False
 _IMPORT_ERR = ""
 try:
-    import scanner as _scanner  # noqa: E402
-    scanner = _scanner
+    from scanner_toolbox.core.scanner import run_full_scan as _run_full_scan
+    from scanner_toolbox.core.cleaner import clean_malware
+    from scanner_toolbox.core.report import generate_report
+    from scanner_toolbox.modules.cache_clean import clean_cache_all, clean_category
+    from scanner_toolbox.modules.anti_hijack import (
+        scan_hosts, scan_browser_shortcuts, scan_context_menu, list_all_startup
+    )
+    from scanner_toolbox.modules.space_manager import find_big_files, find_duplicate_files
+    from scanner_toolbox.modules.security_audit import (
+        scan_suspicious_processes, scan_defender_exclusions, scan_unsigned_drivers
+    )
+    from scanner_toolbox.modules.network_tools import check_dns_proxy, query_port, network_diagnostic
+    from scanner_toolbox.modules.sysinfo import run_sysinfo
+    from scanner_toolbox.modules.install_helper import (
+        check_vc_redist_info, check_dotnet_info, install_vc_redist_silent, install_common_tools
+    )
+    from scanner_toolbox.modules.perf_optimizer import (
+        set_power_plan, disable_visual_effects, enable_visual_effects,
+        disable_nonessential_services, enable_essential_services
+    )
+    from scanner_toolbox.utils.terminal import format_size
     SCANNER_OK = True
 except Exception as e:
     _IMPORT_ERR = repr(e)
@@ -40,20 +58,14 @@ except Exception as e:
 # 1.5 Web UI 模式下替换 input()，防止阻塞线程
 #     所有确认提示默认返回 "n"（安全：不自动执行破坏性操作）
 # ============================================================
-_original_input = __builtins__.input if isinstance(__builtins__, dict) else __builtins__.input
-
 
 def _safe_input(prompt=""):
     """Web UI 下非交互式 input：打印提示 + 返回安全默认值"""
-    print(f"[需要确认] {prompt.rstrip()}(Web UI 模式默认跳过)")
+    print(f"[需要确认] {prompt.rstrip()} (Web UI 模式默认跳过)")
     return "n"
 
 if SCANNER_OK:
     try:
-        if isinstance(__builtins__, dict):
-            __builtins__["input"] = _safe_input
-        else:
-            __builtins__.input = _safe_input
         import builtins
         builtins.input = _safe_input
     except Exception:
@@ -101,7 +113,6 @@ class StreamWriter(io.TextIOBase):
     def _push(self, line: str):
         if not self._window:
             return
-        # 用 json.dumps 安全转义为 JS 字符串字面量
         js = "window.appendLog && window.appendLog({lid},{txt})".format(
             lid=json.dumps(self._log_id),
             txt=json.dumps(line),
@@ -124,26 +135,30 @@ def _need_scanner():
     return True
 
 
+# --- 扫描 & 清理 ---
+
 def _t_scan():
     if _need_scanner():
-        scanner.run_scan()
+        _run_full_scan()
 
 
 def _t_clean():
     if _need_scanner():
-        scanner.clean_cache()
+        clean_cache_all()
 
+
+# --- 防劫持 ---
 
 def _t_hijack_hosts():
     if not _need_scanner():
         return
-    custom, suspicious = scanner.scan_hosts()
+    custom, suspicious = scan_hosts()
     print(f"自定义 hosts 条目: {len(custom)} 条")
     for c in custom:
-        print("  " + c)
+        print("  " + str(c))
     print(f"可疑/劫持条目: {len(suspicious)} 条")
     for s in suspicious:
-        print("  " + s)
+        print("  " + str(s))
     if not custom and not suspicious:
         print("hosts 文件干净，无异常")
 
@@ -151,7 +166,7 @@ def _t_hijack_hosts():
 def _t_hijack_shortcut():
     if not _need_scanner():
         return
-    items = scanner.scan_browser_shortcuts()
+    items = scan_browser_shortcuts()
     if not items:
         print("浏览器快捷方式均正常，未发现劫持")
     else:
@@ -163,7 +178,7 @@ def _t_hijack_shortcut():
 def _t_hijack_context():
     if not _need_scanner():
         return
-    items = scanner.scan_context_menu()
+    items = scan_context_menu()
     if not items:
         print("右键菜单干净，未发现可疑项")
     else:
@@ -174,16 +189,18 @@ def _t_hijack_context():
 
 def _t_hijack_startups():
     if _need_scanner():
-        scanner.list_all_startup()
+        list_all_startup()
 
+
+# --- 空间管理 ---
 
 def _t_space_large():
     if not _need_scanner():
         return
-    files = scanner.find_big_files(min_mb=100, top=30)
+    files = find_big_files(min_mb=100, top=30)
     print(f"Top {len(files)} 大文件：")
     for size, path in files:
-        print(f"  {scanner.format_size(size):>10}  {path}")
+        print(f"  {format_size(size):>10}  {path}")
 
 
 def _t_space_dup(folder=None):
@@ -191,28 +208,32 @@ def _t_space_dup(folder=None):
         return
     folder = folder or os.environ.get("USERPROFILE", "C:\\")
     print(f"扫描重复文件: {folder}")
-    scanner.find_duplicate_files(folder)
+    find_duplicate_files(folder)
 
+
+# --- 安全审计 ---
 
 def _t_sec_proc():
     if _need_scanner():
-        scanner.scan_suspicious_processes()
+        scan_suspicious_processes()
 
 
 def _t_sec_defender():
     if _need_scanner():
-        scanner.scan_defender_exclusions()
+        scan_defender_exclusions()
 
 
 def _t_sec_driver():
     if _need_scanner():
-        scanner.scan_unsigned_drivers()
+        scan_unsigned_drivers()
 
+
+# --- 网络工具 ---
 
 def _t_net_dns():
     if not _need_scanner():
         return
-    info = scanner.check_dns_proxy()
+    info = check_dns_proxy()
     print("DNS 配置：")
     for d in info.get("DNS", []):
         print(f"  {d}")
@@ -229,57 +250,75 @@ def _t_net_port(port=None):
     except (TypeError, ValueError):
         port = 80
     print(f"查询端口 {port} 的占用情况...")
-    scanner.query_port(port)
+    query_port(port)
 
 
 def _t_net_diag():
     if _need_scanner():
-        scanner.network_diagnostic()
+        network_diagnostic()
 
+
+# --- 系统信息 ---
 
 def _t_sysinfo():
     if _need_scanner():
-        scanner.show_system_info()
+        run_sysinfo()
 
 
-def _t_inst_reset():
+# --- 安装助手 ---
+
+def _t_inst_vc():
     if _need_scanner():
-        scanner.reset_this_pc()
+        check_vc_redist_info()
 
 
-def _t_inst_usb():
+def _t_inst_dotnet():
     if _need_scanner():
-        scanner.make_usb_guide()
+        check_dotnet_info()
 
 
-def _t_inst_boot():
+def _t_inst_vcdl():
     if _need_scanner():
-        scanner.advanced_startup()
+        install_vc_redist_silent()
 
 
-def _t_inst_tut():
+def _t_inst_tools():
     if _need_scanner():
-        scanner.show_install_tutorial()
+        install_common_tools()
 
 
-def _t_perf_optimize():
-    if not _need_scanner():
-        return
-    dt, detail = scanner.detect_device_type()
-    disk = scanner.get_system_disk_type()
-    print(f"设备类型: {dt}（{detail}）")
-    print(f"系统盘类型: {disk}")
-    scanner.one_click_optimize(dt, disk)
-
-
-def _t_perf_restore():
-    if _need_scanner():
-        scanner.restore_all_perf()
-
+# --- 性能优化 ---
 
 def _t_perf_power():
     if _need_scanner():
-        scanner.manage_power_plans()
+        set_power_plan()
+
+
+def _t_perf_disable_fx():
+    if _need_scanner():
+        disable_visual_effects()
+
+
+def _t_perf_enable_fx():
+    if _need_scanner():
+        enable_visual_effects()
+
+
+def _t_perf_disable_svc():
+    if _need_scanner():
+        disable_nonessential_services(confirm=False)
+
+
+def _t_perf_enable_svc():
+    if _need_scanner():
+        enable_essential_services()
+
+
+# --- 缓存清理子类别 ---
+
+def _t_clean_cat(key):
+    if _need_scanner():
+        clean_category(key)
 
 
 # (module, action) → (网页日志面板id, 真实函数)
@@ -309,16 +348,27 @@ TASK_MAP = {
 
     ("sysinfo",  None):       ("sysinfo",  _t_sysinfo),
 
-    ("install",  "reset"):    ("install",  _t_inst_reset),
-    ("install",  "usb"):      ("install",  _t_inst_usb),
-    ("install",  "boot"):     ("install",  _t_inst_boot),
-    ("install",  "tutorial"): ("install",  _t_inst_tut),
-    ("install",  None):       ("install",  _t_inst_tut),
+    ("install",  "vc"):       ("install",  _t_inst_vc),
+    ("install",  "dotnet"):   ("install",  _t_inst_dotnet),
+    ("install",  "vcdl"):     ("install",  _t_inst_vcdl),
+    ("install",  "tools"):    ("install",  _t_inst_tools),
+    ("install",  None):       ("install",  _t_inst_vc),
 
-    ("perf",     "optimize"): ("perf",     _t_perf_optimize),
-    ("perf",     "restore"):  ("perf",     _t_perf_restore),
     ("perf",     "power"):    ("perf",     _t_perf_power),
-    ("perf",     None):       ("perf",     _t_perf_optimize),
+    ("perf",     "disable_fx"): ("perf",   _t_perf_disable_fx),
+    ("perf",     "enable_fx"):  ("perf",   _t_perf_enable_fx),
+    ("perf",     "disable_svc"): ("perf",  _t_perf_disable_svc),
+    ("perf",     "enable_svc"):  ("perf",  _t_perf_enable_svc),
+    ("perf",     None):       ("perf",     _t_perf_power),
+
+    ("clean_cat", "1"):       ("clean",    lambda: _t_clean_cat("1")),
+    ("clean_cat", "2"):       ("clean",    lambda: _t_clean_cat("2")),
+    ("clean_cat", "3"):       ("clean",    lambda: _t_clean_cat("3")),
+    ("clean_cat", "4"):       ("clean",    lambda: _t_clean_cat("4")),
+    ("clean_cat", "5"):       ("clean",    lambda: _t_clean_cat("5")),
+    ("clean_cat", "6"):       ("clean",    lambda: _t_clean_cat("6")),
+    ("clean_cat", "7"):       ("clean",    lambda: _t_clean_cat("7")),
+    ("clean_cat", "8"):       ("clean",    lambda: _t_clean_cat("8")),
 }
 
 
@@ -338,12 +388,7 @@ class Api:
     # --- 给网页查询用 ---
 
     def is_admin(self):
-        if not SCANNER_OK:
-            return False
-        try:
-            return bool(scanner.is_admin())
-        except Exception:
-            return False
+        return False
 
     def backend_ready(self):
         return {
@@ -357,7 +402,7 @@ class Api:
     def run_task(self, module, action=None, params=None):
         with self._lock:
             if self._running:
-                self._push(module, "[WARN] 已有任务在执行中，请等待完成")
+                self._push("scan", "[WARN] 已有任务在执行中，请等待完成")
                 return {"ok": False, "err": "busy"}
             self._running = True
 
