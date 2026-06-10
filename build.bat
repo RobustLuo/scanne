@@ -30,6 +30,7 @@ pyinstaller --onefile --windowed ^
     --version-file version_info.py ^
     --manifest app.manifest ^
     --uac-admin ^
+    --icon=icon.ico ^
     --add-data "preview.html;." ^
     --hidden-import webview.platforms.edgechromium ^
     --hidden-import webview.platforms.mshtml ^
@@ -65,6 +66,7 @@ pyinstaller --onefile --windowed ^
     --version-file version_info.py ^
     --manifest app.manifest ^
     --uac-admin ^
+    --icon=icon.ico ^
     --collect-data customtkinter ^
     --hidden-import scanner_toolbox ^
     --hidden-import scanner_toolbox.config ^
@@ -97,6 +99,7 @@ pyinstaller --onefile ^
     --version-file version_info.py ^
     --manifest app.manifest ^
     --uac-admin ^
+    --icon=icon.ico ^
     --hidden-import scanner_toolbox ^
     --hidden-import scanner_toolbox.config ^
     --hidden-import scanner_toolbox.config.constants ^
