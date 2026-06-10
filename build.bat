@@ -131,6 +131,14 @@ echo ============================================
 echo   输出文件在 dist\ 目录下
 echo ============================================
 echo.
+echo   如需打包为安装程序:
+echo     1. 安装 Inno Setup: https://jrsoftware.org/isinfo.php
+echo     2. 先选 [1] 打包网页版
+echo     3. 再选 [2] 打包 GUI 版
+echo     4. 再选 [3] 打包命令行版
+echo     5. 运行: iscc installer.iss
+echo     6. 安装包输出在 installer_output\ 目录
+echo.
 echo 提示: 如果要彻底消除SmartScreen警告，需要购买代码签名证书
 echo       对exe进行数字签名 (signtool sign)
 echo.
