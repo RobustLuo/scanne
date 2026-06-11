@@ -2,10 +2,7 @@ name: Build & Release
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
-  pull_request:
-    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -21,30 +18,7 @@ env:
 
 jobs:
   # ============================================================
-  # 1. 代码质量检查
-  # ============================================================
-  lint:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install lint tools
-        run: pip install ruff
-
-      - name: Run Ruff linter
-        run: python -m ruff check scanner_toolbox scanner_webview.py scanner_gui.py
-
-      - name: Run Ruff format check
-        run: python -m ruff format --check scanner_toolbox scanner_webview.py scanner_gui.py
-
-  # ============================================================
-  # 2. 构建三个版本的 Windows EXE
+  # 1. 构建三个版本的 Windows EXE
   # ============================================================
   build:
     runs-on: windows-latest
@@ -55,7 +29,7 @@ jobs:
             display: "超级骆狗工具箱"
             script: scanner_webview.py
             windowed: true
-            extra_args: >-
+            extra: >-
               --add-data "preview.html;."
               --hidden-import webview.platforms.edgechromium
               --hidden-import webview.platforms.mshtml
@@ -64,50 +38,30 @@ jobs:
             display: "超级骆狗工具箱-GUI"
             script: scanner_gui.py
             windowed: true
-            extra_args: >-
+            extra: >-
               --collect-data customtkinter
           - name: console
             display: "超级骆狗工具箱-命令行"
             script: scanner_toolbox/main.py
             windowed: false
-            extra_args: ""
+            extra: ""
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install Pillow
-          pip install -e ".[dev]"
+          pip install --upgrade pip
+          pip install pyinstaller pillow
+          if ("${{ matrix.target.name }}" -eq "webview") { pip install pywebview }
+          if ("${{ matrix.target.name }}" -eq "gui") { pip install customtkinter }
 
-      - name: Generate app icon (skip if custom icon exists)
-        run: python generate_icon.py
-
-      - name: Update version info
-        if: github.event.inputs.version != ''
-        shell: python
+      - name: Build EXE
         run: |
-          import re
-          version = "${{ github.event.inputs.version }}"
-          ver_tuple = tuple(int(x) for x in version.split('.')) + (0,)
-          with open('version_info.py', 'r', encoding='utf-8') as f:
-            content = f.read()
-          content = re.sub(r'filevers=\([^)]+\)', f'filevers={ver_tuple}', content)
-          content = re.sub(r'prodvers=\([^)]+\)', f'prodvers={ver_tuple}', content)
-          content = re.sub(r"FileVersion', u'[^']+'", f"FileVersion', u'{version}.0'", content)
-          content = re.sub(r"ProductVersion', u'[^']+'", f"ProductVersion', u'{version}.0'", content)
-          with open('version_info.py', 'w', encoding='utf-8') as f:
-            f.write(content)
-
-      - name: Build ${{ matrix.target.display }}
-        run: |
-          $windowed = "${{ matrix.target.windowed }}"
           $args = @(
             "--onefile"
             "--name", "${{ matrix.target.display }}"
@@ -137,28 +91,21 @@ jobs:
             "--hidden-import", "scanner_toolbox.utils.file_ops"
             "--clean"
           )
-          if ($windowed -eq "true") {
-            $args += "--windowed"
-          }
-          if ("${{ matrix.target.extra_args }}" -ne "") {
-            $extra = "${{ matrix.target.extra_args }}" -split '\s+'
-            $args += $extra
+          if ("${{ matrix.target.windowed }}" -eq "true") { $args += "--windowed" }
+          if ("${{ matrix.target.extra }}" -ne "") {
+            $args += "${{ matrix.target.extra }}" -split '\s+'
           }
           $args += "${{ matrix.target.script }}"
           pyinstaller @args
 
-      - name: Copy EXE to root for flat artifact
-        run: copy "dist\${{ matrix.target.display }}.exe" .
-
-      - name: Upload EXE Artifact
+      - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target.name }}
-          path: ${{ matrix.target.display }}.exe
-          retention-days: 90
+          path: dist/${{ matrix.target.display }}.exe
 
   # ============================================================
-  # 3. 打包安装程序（Inno Setup）
+  # 2. 打包安装程序（Inno Setup）
   # ============================================================
   pack_installer:
     needs: build
@@ -166,113 +113,82 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all EXE artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
 
-      - name: Verify EXE files
+      - name: Verify EXEs
         run: |
-          echo "=== Downloaded EXEs ==="
-          dir dist /s /b
-          if not exist "dist\超级骆狗工具箱.exe" exit /b 1
+          ls dist/
+          if (-not (Test-Path "dist/超级骆狗工具箱.exe")) { exit 1 }
 
       - name: Install Inno Setup
-        run: |
-          choco install innosetup -y --no-progress
-          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: Update installer version
-        if: github.event.inputs.version != ''
-        shell: python
-        run: |
-          import re
-          version = "${{ github.event.inputs.version }}"
-          with open('installer.iss', 'r', encoding='utf-8') as f:
-            content = f.read()
-          content = re.sub(r'#define AppVersion\s+".*"', f'#define AppVersion    "{version}"', content)
-          content = re.sub(r'Setup-v[\d.]+', f'Setup-v{version}', content)
-          with open('installer.iss', 'w', encoding='utf-8') as f:
-            f.write(content)
+        run: choco install innosetup -y --no-progress
 
       - name: Build installer
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
-          dir installer_output\
+          ls installer_output/
 
-      - name: Upload Installer Artifact
+      - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
           name: installer
           path: installer_output/超级骆狗工具箱-Setup-*.exe
-          retention-days: 90
 
   # ============================================================
-  # 4. 发布 Release（仅 tag 触发或手动输入版本号）
+  # 3. 发布 Release
   # ============================================================
   release:
-    needs: [build, pack_installer]
+    needs: pack_installer
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: false
 
-      - name: Prepare release files
+      - name: Collect files
         run: |
           mkdir -p release
-          # Copy all EXEs and installer
           find dist -name "*.exe" -exec cp {} release/ \;
           ls -lh release/
-
-      - name: Set version env
-        run: echo "REL_VERSION=${{ github.event.inputs.version || github.ref_name }}" >> $GITHUB_ENV
-
-      - name: Generate release notes
-        run: |
-          cat > release_notes.md << ENDOFFILE
-          ## 超级骆狗工具箱 ${{ env.REL_VERSION }}
-
-          一个集系统扫描、垃圾清理、防劫持、安全审计于一体的 Windows 工具箱。
-
-          ### 下载推荐
-          | 文件 | 说明 |
-          |------|------|
-          | **超级骆狗工具箱-Setup.exe** | 安装程序（推荐）— 自动安装到开始菜单和桌面 |
-          | 超级骆狗工具箱.exe | Web UI 版 — 绿色便携版，无需安装 |
-
-          ### 其他构建
-          | 文件 | 说明 |
-          |------|------|
-          | 超级骆狗工具箱-GUI.exe | CustomTkinter 桌面版 |
-          | 超级骆狗工具箱-命令行.exe | 命令行版 |
-
-          ### 安装说明
-          1. 下载 **超级骆狗工具箱-Setup.exe**
-          2. 双击运行，按向导完成安装
-          3. 首次启动 Windows Defender 可能误报，点击「更多信息」→「仍要运行」
-
-          ### 系统要求
-          - Windows 10/11 (64位)
-          - 需要管理员权限
-
-          ### 注意事项
-          - 建议购买代码签名证书以消除 SmartScreen 警告
-          - 本工具仅支持 Windows 系统
-          ENDOFFILE
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.ref_name }}
-          name: 超级骆狗工具箱 ${{ env.REL_VERSION }}
-          body_path: release_notes.md
+          name: 超级骆狗工具箱 ${{ github.ref_name }}
+          body: |
+            ## 超级骆狗工具箱 ${{ github.ref_name }}
+
+            集系统扫描、垃圾清理、防劫持、安全审计于一体的 Windows 工具箱。
+
+            ### 推荐下载
+
+            | 文件 | 说明 |
+            |------|------|
+            | **超级骆狗工具箱-Setup-*.exe** | 安装程序 — 自动装到开始菜单和桌面 |
+            | 超级骆狗工具箱.exe | Web UI 版 — 绿色便携版，无需安装 |
+
+            ### 其他版本
+
+            | 文件 | 说明 |
+            |------|------|
+            | 超级骆狗工具箱-GUI.exe | CustomTkinter 桌面版 |
+            | 超级骆狗工具箱-命令行.exe | 命令行版 |
+
+            ### 使用说明
+
+            1. 下载 **安装程序** 或 **绿色版** EXE 文件
+            2. 右键「以管理员身份运行」
+            3. 首次运行 SmartScreen 可能误报，点「更多信息」→「仍要运行」
+
+            ### 系统要求
+            - Windows 10/11 (64位)
+            - 需要管理员权限
           files: release/*.exe
           draft: false
-          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.event.inputs.version, 'beta') || contains(github.event.inputs.version, 'alpha') }}
+          prerelease: false
