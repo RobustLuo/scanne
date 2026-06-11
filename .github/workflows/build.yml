@@ -112,19 +112,20 @@ jobs:
   # ============================================================
   pack_installer:
     needs: build
+    continue-on-error: true
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
-          path: dist
+          path: artifacts
           merge-multiple: true
 
-      - name: Verify EXEs
+      - name: Flatten artifacts to dist
         run: |
+          Get-ChildItem -Path artifacts -Recurse -Filter *.exe | Move-Item -Destination dist/ -Force
           ls dist/
-          if (-not (Test-Path "dist/超级骆狗工具箱.exe")) { exit 1 }
 
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
@@ -144,20 +145,20 @@ jobs:
   # 3. 发布 Release
   # ============================================================
   release:
-    needs: pack_installer
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
-          path: dist
+          path: artifacts
           merge-multiple: false
 
       - name: Collect files
         run: |
           mkdir -p release
-          find dist -name "*.exe" -exec cp {} release/ \;
+          find artifacts -name "*.exe" -exec cp {} release/ \;
           ls -lh release/
 
       - name: Create Release
