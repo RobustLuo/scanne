@@ -29,22 +29,14 @@ jobs:
             display: "超级骆狗工具箱"
             script: scanner_webview.py
             windowed: true
-            extra: >-
-              --add-data "preview.html;."
-              --hidden-import webview.platforms.edgechromium
-              --hidden-import webview.platforms.mshtml
-              --hidden-import webview.platforms.winforms
           - name: gui
             display: "超级骆狗工具箱-GUI"
             script: scanner_gui.py
             windowed: true
-            extra: >-
-              --collect-data customtkinter
           - name: console
             display: "超级骆狗工具箱-命令行"
             script: scanner_toolbox/main.py
             windowed: false
-            extra: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +53,9 @@ jobs:
           if ("${{ matrix.target.name }}" -eq "gui") { pip install customtkinter }
 
       - name: Build EXE
+        shell: pwsh
         run: |
+          $target = "${{ matrix.target.name }}"
           $args = @(
             "--onefile"
             "--name", "${{ matrix.target.display }}"
@@ -92,9 +86,18 @@ jobs:
             "--clean"
           )
           if ("${{ matrix.target.windowed }}" -eq "true") { $args += "--windowed" }
-          if ("${{ matrix.target.extra }}" -ne "") {
-            $args += "${{ matrix.target.extra }}" -split '\s+'
+
+          # Target-specific extras
+          if ($target -eq "webview") {
+            $args += "--add-data=preview.html;."
+            $args += "--hidden-import=webview.platforms.edgechromium"
+            $args += "--hidden-import=webview.platforms.mshtml"
+            $args += "--hidden-import=webview.platforms.winforms"
           }
+          elseif ($target -eq "gui") {
+            $args += "--collect-data=customtkinter"
+          }
+
           $args += "${{ matrix.target.script }}"
           pyinstaller @args
 
