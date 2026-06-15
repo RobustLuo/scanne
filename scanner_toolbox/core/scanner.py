@@ -204,7 +204,7 @@ def scan_startup():
         "baofeng", "暴风", "funshion", "pptv",
         "kuaizip", "快压", "haozip",
         "qqpcmgr", "ludashi", "adsafe",
-        "ucbrowser", "小鸟壁纸",
+        "ucbrowser", "小鸟壁纸","uc浏览器","WinRAR",
     ]
 
     for hive, key_path in startup_keys:
