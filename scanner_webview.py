@@ -19,11 +19,17 @@ from contextlib import redirect_stdout, redirect_stderr
 import webview
 
 # ============================================================
-# 1. 准备：导入 scanner_toolbox 模块（跨平台容错）
+# 1. 准备：项目路径（须在 import scanner_toolbox 之前）
 # ============================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, BASE_DIR)
+if getattr(sys, "frozen", False):
+    BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+from scanner_toolbox.utils.paths import resource_path
 
 SCANNER_OK = False
 _IMPORT_ERR = ""
@@ -388,7 +394,11 @@ class Api:
     # --- 给网页查询用 ---
 
     def is_admin(self):
-        return False
+        try:
+            from scanner_toolbox.utils.terminal import is_admin
+            return bool(is_admin())
+        except Exception:
+            return False
 
     def backend_ready(self):
         return {
@@ -465,12 +475,38 @@ class Api:
 # 5. 入口
 # ============================================================
 
+def _show_fatal(message: str):
+    """窗口模式下弹出错误，避免静默白屏。"""
+    try:
+        if sys.platform == "win32":
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(0, message, "超级骆狗工具箱", 0x10)
+        else:
+            print(message, file=sys.stderr)
+    except Exception:
+        print(message, file=sys.stderr)
+
+
+def _validate_bundle() -> str:
+    """检查 UI 资源是否齐全，返回 preview.html 绝对路径。"""
+    html_path = resource_path("preview.html")
+    missing = []
+    for rel in ("preview.html", "assets/app.css", "assets/fonts.css"):
+        if not os.path.isfile(resource_path(*rel.split("/"))):
+            missing.append(rel)
+    if missing:
+        _show_fatal(
+            "界面资源缺失，无法启动：\n\n"
+            + "\n".join(f"  • {name}" for name in missing)
+            + "\n\n请重新下载完整安装包，或使用 build.bat 重新打包。"
+        )
+        sys.exit(1)
+    return html_path
+
+
 def main():
     api = Api()
-    html_path = os.path.join(BASE_DIR, "preview.html")
-    if not os.path.exists(html_path):
-        print(f"[FATAL] 找不到 preview.html: {html_path}")
-        sys.exit(1)
+    html_path = _validate_bundle()
 
     window = webview.create_window(
         title="超级骆狗工具箱 v3.0",

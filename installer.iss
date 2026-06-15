@@ -5,7 +5,7 @@
 ; ============================================================
 
 #define AppName       "超级骆狗工具箱"
-#define AppVersion    "2.0.0"
+#define AppVersion    "3.0.0"
 #define AppPublisher  "骆狗"
 #define AppURL        "https://github.com/RobustLuo/scanne"
 #define AppExeName    "超级骆狗工具箱.exe"
@@ -21,6 +21,7 @@ AppUpdatesURL={#AppURL}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
+UninstallDisplayName={#AppName}
 OutputDir=installer_output
 OutputBaseFilename={#AppName}-Setup-v{#AppVersion}
 SetupIconFile=icon.ico

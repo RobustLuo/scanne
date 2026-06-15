@@ -103,18 +103,28 @@ python scanner_webview.py
 
 在 Windows 上双击运行 `build.bat`，按提示选择打包类型：
 
-- **[1]** GUI 版（CustomTkinter）
-- **[2]** 命令行版
-- **[3]** 网页版（pywebview，界面与 `preview.html` 1:1 一致，**推荐**）
+- **[1]** 网页版（pywebview，**推荐**，界面与 `preview.html` 一致）
+- **[2]** GUI 版（CustomTkinter）
+- **[3]** 命令行版
 
-生成的 exe 在 `dist\` 目录下。
+生成的 exe 在 `dist\` 目录下。网页版会将 `preview.html` 与 `assets/` 离线样式一并打包，**无需联网**即可显示界面。
+
+打包三个版本后，可运行 `iscc installer.iss` 生成安装程序（会出现在 Windows「设置 → 应用」中）。
+
+### 便携版 vs 安装版
+
+| 文件 | 说明 |
+|------|------|
+| `超级骆狗工具箱-Setup-v*.exe` | **安装程序** — 写入系统应用列表，创建开始菜单/桌面快捷方式 |
+| `超级骆狗工具箱.exe` | **绿色便携版** — 双击即用，**不会**出现在「已安装应用」中 |
 
 或手动执行（以网页版为例）：
 ```bash
 pip install pyinstaller pywebview
 pyinstaller --onefile --windowed --uac-admin ^
     --add-data "preview.html;." ^
-    --name "超级骆狗工具箱-Web" scanner_webview.py
+    --add-data "assets;assets" ^
+    --name "超级骆狗工具箱" scanner_webview.py
 ```
 
 ### preview.html 直接在浏览器中预览（仅看 UI，不连接真实功能）

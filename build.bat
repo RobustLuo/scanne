@@ -32,6 +32,7 @@ pyinstaller --onefile --windowed ^
     --uac-admin ^
     --icon=icon.ico ^
     --add-data "preview.html;." ^
+    --add-data "assets;assets" ^
     --hidden-import webview.platforms.edgechromium ^
     --hidden-import webview.platforms.mshtml ^
     --hidden-import webview.platforms.winforms ^
@@ -55,6 +56,7 @@ pyinstaller --onefile --windowed ^
     --hidden-import scanner_toolbox.utils ^
     --hidden-import scanner_toolbox.utils.terminal ^
     --hidden-import scanner_toolbox.utils.file_ops ^
+    --hidden-import scanner_toolbox.utils.paths ^
     --clean ^
     scanner_webview.py
 goto done

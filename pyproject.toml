@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scanner-toolbox"
-version = "2.0.0"
+version = "3.0.0"
 description = "超级骆狗工具箱 - 流氓软件扫描与清理工具"
 readme = "README.md"
 license = {text = "MIT"}
@@ -78,6 +78,7 @@ hiddenimports = [
     "scanner_toolbox.utils",
     "scanner_toolbox.utils.terminal",
     "scanner_toolbox.utils.file_ops",
+    "scanner_toolbox.utils.paths",
 ]
 
 # ============================================================

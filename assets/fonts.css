@@ -1,0 +1,41 @@
+/* 离线字体：使用系统字体，不依赖 Google Fonts */
+:root {
+  --font-sans: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", sans-serif;
+  --font-mono: "Cascadia Mono", "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+
+body,
+.font-body-md,
+.font-body-lg,
+.font-label-md,
+.font-label-lg,
+.font-title-md,
+.font-title-lg,
+.font-headline-sm,
+.font-headline-md {
+  font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Material Symbols 离线降级：无图标字体时仍保持对齐 */
+.material-symbols-outlined {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25em;
+  min-width: 1.25em;
+  font-size: 1.25rem;
+  line-height: 1;
+  font-style: normal;
+  font-weight: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-family: "Segoe UI Symbol", "Segoe UI Emoji", var(--font-sans);
+  user-select: none;
+}

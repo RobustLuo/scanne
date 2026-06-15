@@ -83,6 +83,7 @@ jobs:
             "--hidden-import", "scanner_toolbox.utils"
             "--hidden-import", "scanner_toolbox.utils.terminal"
             "--hidden-import", "scanner_toolbox.utils.file_ops"
+            "--hidden-import", "scanner_toolbox.utils.paths"
             "--clean"
           )
           if ("${{ matrix.target.windowed }}" -eq "true") { $args += "--windowed" }
@@ -90,6 +91,7 @@ jobs:
           # Target-specific extras
           if ($target -eq "webview") {
             $args += "--add-data=preview.html;."
+            $args += "--add-data=assets;assets"
             $args += "--hidden-import=webview.platforms.edgechromium"
             $args += "--hidden-import=webview.platforms.mshtml"
             $args += "--hidden-import=webview.platforms.winforms"
@@ -112,7 +114,6 @@ jobs:
   # ============================================================
   pack_installer:
     needs: build
-    continue-on-error: true
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -124,7 +125,18 @@ jobs:
 
       - name: Flatten artifacts to dist
         run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
           Get-ChildItem -Path artifacts -Recurse -Filter *.exe | Move-Item -Destination dist/ -Force
+          $required = @(
+            "超级骆狗工具箱.exe",
+            "超级骆狗工具箱-GUI.exe",
+            "超级骆狗工具箱-命令行.exe"
+          )
+          foreach ($name in $required) {
+            if (-not (Test-Path "dist\$name")) {
+              Write-Error "缺少构建产物: dist\$name"
+            }
+          }
           ls dist/
 
       - name: Install Inno Setup
@@ -145,7 +157,7 @@ jobs:
   # 3. 发布 Release
   # ============================================================
   release:
-    needs: build
+    needs: [build, pack_installer]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -174,8 +186,8 @@ jobs:
 
             | 文件 | 说明 |
             |------|------|
-            | **超级骆狗工具箱-Setup-*.exe** | 安装程序 — 自动装到开始菜单和桌面 |
-            | 超级骆狗工具箱.exe | Web UI 版 — 绿色便携版，无需安装 |
+            | **超级骆狗工具箱-Setup-v*.exe** | 安装程序 — 写入「应用和功能」，自动创建开始菜单/桌面快捷方式 |
+            | 超级骆狗工具箱.exe | Web UI 版 — 绿色便携版，**不会**出现在「已安装应用」列表 |
 
             ### 其他版本
 
